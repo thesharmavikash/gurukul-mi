@@ -1,0 +1,10 @@
+# Junk and temp files
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+
+# App specific
+storage/certificates/*.pdf
+temp_media/
+.gemini/

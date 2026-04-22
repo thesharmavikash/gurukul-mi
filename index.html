@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GURUKUL IAS - Multiple Intelligences Assessment</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .portal-container { max-width: 1000px; margin: 40px auto; padding: 20px; text-align: center; }
+        .portal-header { margin-bottom: 50px; }
+        .portal-header img { width: 100px; border-radius: 20px; margin-bottom: 20px; border: 3px solid var(--primary); }
+        .portal-header h1 { font-size: 3rem; font-weight: 900; letter-spacing: -2px; margin-bottom: 10px; }
+        .portal-header p { color: var(--secondary-text); font-size: 1.2rem; }
+        
+        .test-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-top: 50px; }
+        .test-card { 
+            background: var(--card); border: 1px solid var(--border); padding: 40px 30px; border-radius: 32px; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; text-decoration: none; color: inherit;
+            display: flex; flex-direction: column; align-items: center; position: relative; overflow: hidden;
+        }
+        .test-card:hover { border-color: var(--primary); transform: translateY(-10px); background: var(--card-hover); }
+        .test-card h3 { font-size: 1.5rem; font-weight: 800; margin: 20px 0 10px; color: var(--text); }
+        .test-card p { font-size: 0.9rem; color: var(--secondary-text); line-height: 1.6; }
+        .test-card .icon-circle { 
+            width: 80px; height: 80px; border-radius: 50%; background: rgba(225, 29, 72, 0.1); 
+            display: flex; align-items: center; justify-content: center; color: var(--primary);
+            margin-bottom: 10px; transition: 0.3s;
+        }
+        .test-card:hover .icon-circle { background: var(--primary); color: #fff; transform: scale(1.1); }
+        
+        .verify-section { margin: 60px 0; padding: 50px; background: var(--card); border-radius: 32px; border: 1px solid var(--border); text-align: left; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; }
+        .verify-input-group { position: relative; margin-top: 20px; }
+        .verify-input { width: 100%; padding: 20px 30px; background: var(--input-bg); border: 2px solid var(--border); border-radius: 20px; color: var(--text); font-weight: 700; font-size: 18px; outline: none; transition: 0.3s; }
+        .verify-input:focus { border-color: var(--primary); background: var(--card); }
+        .verify-btn { position: absolute; right: 10px; top: 10px; bottom: 10px; background: var(--primary); color: #fff; border: none; padding: 0 25px; border-radius: 12px; font-weight: 800; cursor: pointer; }
+
+        .ticker-wrap { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card); border-top: 1px solid var(--border); padding: 10px 0; z-index: 1000; overflow: hidden; }
+        .ticker { display: flex; gap: 50px; animation: ticker 30s linear infinite; white-space: nowrap; }
+        .ticker-item { font-size: 13px; font-weight: 700; color: var(--secondary-text); display: flex; align-items: center; gap: 8px; }
+        .ticker-item .dot { width: 6px; height: 6px; background: var(--success); border-radius: 50%; }
+
+        @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+        @media (max-width: 768px) { .test-grid { grid-template-columns: 1fr; } .verify-section { grid-template-columns: 1fr; padding: 30px; } }
+    </style>
+</head>
+<body data-theme="light">
+    <div class="portal-container">
+        <header class="portal-header">
+            <img src="gurukul_ias.jpeg" alt="GURUKUL IAS">
+            <h1>MULTIPLE <span style="color: var(--primary)">INTELLIGENCES</span></h1>
+            <p>Unlock your unique cognitive blueprint. Choose your assessment depth.</p>
+        </header>
+
+        <div class="test-grid" id="test-grid">
+            <div class="loading-state"><p>Loading assessments...</p></div>
+        </div>
+
+        <section class="verify-section">
+            <div>
+                <h2 style="font-size: 2rem; font-weight: 900; margin: 0;">Verify <span style="color: var(--primary)">Certificate</span></h2>
+                <p style="color: var(--secondary-text); margin-top: 10px;">Enter your Student ID or Certificate Hash to verify authentic records.</p>
+                <div class="verify-input-group">
+                    <input type="text" id="v-hash" class="verify-input" placeholder="GIAS-2026-XXXX">
+                    <button onclick="verify()" class="verify-btn">VERIFY</button>
+                </div>
+            </div>
+            <div id="cms-about" style="background: var(--input-bg); padding: 30px; border-radius: 24px; border: 1px solid var(--border);">
+                <h4 id="cms-title" style="margin: 0; color: var(--primary); font-weight: 800;">What is MI?</h4>
+                <p id="cms-body" style="font-size: 0.9rem; color: var(--secondary-text); line-height: 1.6; margin-top: 10px;">Multiple Intelligences (MI) is a psychological theory about people and their different types of intelligences.</p>
+            </div>
+        </section>
+
+        <div class="auth-actions">
+            <p style="color: var(--secondary-text); margin-bottom: 20px;">Manage your profile or view past results.</p>
+            <button class="btn-secondary" onclick="location.href='login.html'">STUDENT DASHBOARD</button>
+        </div>
+    </div>
+
+    <div class="ticker-wrap">
+        <div class="ticker" id="ticker">
+            <!-- Ticker items injected here -->
+        </div>
+    </div>
+
+    <script>
+        async function init() {
+            // Check for system theme
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                // document.body.setAttribute('data-theme', 'dark'); // Optional
+            }
+
+            try {
+                // Load CMS
+                const resC = await fetch('api.php?type=homepage_cms');
+                const cms = await resC.json();
+                if (cms.about_mi) {
+                    document.getElementById('cms-title').innerText = cms.about_mi.title;
+                    document.getElementById('cms-body').innerText = cms.about_mi.body;
+                }
+
+                // Load Tests
+                const resT = await fetch('api.php?type=active_tests');
+                const tests = await resT.json();
+                const grid = document.getElementById('test-grid');
+                grid.innerHTML = tests.map(test => `
+                    <a href="test.html?id=${test.id}" class="test-card">
+                        ${test.id > 3 ? '<div class="badge-new" style="position: absolute; top: 20px; right: -30px; background: var(--primary); color: #fff; padding: 5px 40px; font-size: 10px; font-weight: 900; transform: rotate(45deg);">NEW</div>' : ''}
+                        <div class="icon-circle">
+                             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                ${test.question_count <= 24 ? '<circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>' : 
+                                  (test.question_count <= 60 ? '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>' : 
+                                  '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>')}
+                             </svg>
+                        </div>
+                        <h3>${test.name}</h3>
+                        <p>${test.description || 'Custom profile.'} ${test.question_count} questions.</p>
+                    </a>
+                `).join('');
+
+                // Load Ticker
+                updateTicker();
+                setInterval(updateTicker, 30000);
+
+            } catch (e) { console.error('Home init failed', e); }
+        }
+
+        async function updateTicker() {
+            const res = await fetch('api.php?type=recent_completions');
+            const data = await res.json();
+            const ticker = document.getElementById('ticker');
+            ticker.innerHTML = data.map(item => `
+                <div class="ticker-item"><span class="dot"></span> ${item.name} just completed ${item.test_type} Assessment</div>
+            `).join('') + ticker.innerHTML; // Duplicate for continuous flow
+        }
+
+        function verify() {
+            const v = document.getElementById('v-hash').value.trim();
+            if (v) location.href = 'verify.php?v=' + v;
+        }
+
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Login - GURUKUL IAS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .auth-container { max-width: 450px; margin: 100px auto; padding: 40px; background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 32px; }
+        .auth-container h2 { font-size: 2rem; margin-bottom: 30px; text-align: center; }
+        .auth-footer { margin-top: 30px; text-align: center; color: #64748b; font-size: 0.9rem; }
+        .auth-footer a { color: var(--primary); text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <h2>Student <span style="color: var(--primary)">Login</span></h2>
+        <form id="login-form">
+            <div class="input-group">
+                <label>Email or Mobile</label>
+                <input type="text" id="login" placeholder="Enter your registered email/mobile" required>
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 20px;">SIGN IN</button>
+        </form>
+        <div class="auth-footer">
+            Don't have an account? <a href="#" onclick="showRegister()">Register here</a>
+        </div>
+    </div>
+
+    <div id="register-container" class="auth-container" style="display: none;">
+        <h2>Join <span style="color: var(--primary)">Gurukul</span></h2>
+        <form id="register-form">
+            <div class="input-group">
+                <label>Full Name</label>
+                <input type="text" id="name" placeholder="Enter your full name" required>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="input-group">
+                    <label>Age</label>
+                    <input type="number" id="age" placeholder="Age" required>
+                </div>
+                <div class="input-group">
+                    <label>Mobile</label>
+                    <input type="tel" id="mobile" placeholder="10-digit mobile" required>
+                </div>
+            </div>
+            <div class="input-group">
+                <label>Email</label>
+                <input type="email" id="email" placeholder="email@example.com" required>
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="reg-password" placeholder="Create a password" required>
+            </div>
+            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 20px;">CREATE ACCOUNT</button>
+        </form>
+        <div class="auth-footer">
+            Already have an account? <a href="#" onclick="showLogin()">Login here</a>
+        </div>
+    </div>
+
+    <script>
+        function showRegister() {
+            document.querySelector('.auth-container').style.display = 'none';
+            document.getElementById('register-container').style.display = 'block';
+        }
+        function showLogin() {
+            document.getElementById('register-container').style.display = 'none';
+            document.querySelector('.auth-container').style.display = 'block';
+        }
+
+        document.getElementById('login-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const res = await fetch('api.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'student_login',
+                    login: document.getElementById('login').value,
+                    password: document.getElementById('password').value
+                })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                localStorage.setItem('student', JSON.stringify(data.user));
+                location.href = 'dashboard.html';
+            } else {
+                alert(data.error);
+            }
+        };
+
+        document.getElementById('register-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const res = await fetch('api.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'student_register',
+                    name: document.getElementById('name').value,
+                    age: document.getElementById('age').value,
+                    mobile: document.getElementById('mobile').value,
+                    email: document.getElementById('email').value,
+                    password: document.getElementById('reg-password').value
+                })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                alert('Account created! Please login.');
+                showLogin();
+            } else {
+                alert(data.error);
+            }
+        };
+    </script>
+</body>
+</html>
