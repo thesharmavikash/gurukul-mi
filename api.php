@@ -73,12 +73,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $type === 'questions') {
 
     if ($test) {
         $count = (int)$test['question_count'];
-        $perCat = max(1, floor($count / 8));
+        $perCat = floor($count / 8);
+        $remainder = $count % 8;
         $allQs = [];
+        
         for ($i=0; $i<8; $i++) {
-            $stmt = $pdo->prepare("SELECT id, category_index as cat, text_en, text_hi FROM questions WHERE category_index = ? ORDER BY RAND() LIMIT ?");
-            $stmt->execute([$i, $perCat]);
-            $allQs = array_merge($allQs, $stmt->fetchAll());
+            $limit = $perCat + ($i < $remainder ? 1 : 0);
+            if ($limit > 0) {
+                $stmt = $pdo->prepare("SELECT id, category_index as cat, text_en, text_hi FROM questions WHERE category_index = ? ORDER BY RAND() LIMIT ?");
+                $stmt->execute([$i, (int)$limit]);
+                $allQs = array_merge($allQs, $stmt->fetchAll());
+            }
         }
         shuffle($allQs);
         echo json_encode($allQs);

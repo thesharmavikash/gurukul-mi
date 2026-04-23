@@ -58,6 +58,14 @@ export const Integrity = {
         window.dispatchEvent(new CustomEvent('mi_violation', { detail: { reason, total: this.violations } }));
     },
 
+    async requestFullscreen() {
+        const el = document.documentElement;
+        const rfs = el.requestFullscreen || el.webkitRequestFullScreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+        if (rfs) {
+            try { await rfs.call(el); } catch (e) { console.warn("Fullscreen rejected", e); }
+        }
+    },
+
     showViolationWarning(reason) {
         let warn = document.getElementById('integrity-warn');
         if (!warn) {
