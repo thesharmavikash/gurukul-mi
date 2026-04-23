@@ -57,9 +57,9 @@ body {
     align-items: center;
 }
 .brand { display: flex; align-items: center; gap: 15px; cursor: pointer; text-decoration: none; }
-.logo-icon { width: 60px; height: 60px; border-radius: 12px; object-fit: cover; border: 3px solid var(--primary); }
-.brand-text h1 { margin: 0; font-size: 28px; color: var(--primary); text-transform: uppercase; letter-spacing: -1px; }
-.brand-text p { margin: 0; font-size: 13px; color: var(--secondary-text); text-transform: uppercase; }
+.logo-icon { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; border: 2px solid var(--primary); }
+.brand-text h1 { margin: 0; font-size: 24px; color: var(--primary); text-transform: uppercase; letter-spacing: -1px; }
+.brand-text p { margin: 0; font-size: 11px; color: var(--secondary-text); text-transform: uppercase; }
 
 .header-actions { display: flex; align-items: center; gap: 12px; }
 .action-btn {

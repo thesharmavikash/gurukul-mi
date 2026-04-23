@@ -7,10 +7,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
-        .portal-container { max-width: 1200px; margin: 40px auto; padding: 0 20px; text-align: center; }
-        .hero-section { padding: 60px 0; margin-bottom: 40px; }
-        .hero-section h1 { font-size: 4.5rem; font-weight: 900 !important; letter-spacing: -3px; margin-bottom: 10px; }
-        .hero-section p { color: var(--secondary-text); font-size: 1.4rem; font-weight: 800 !important; }
+        .portal-container { max-width: 1100px; margin: 50px auto; padding: 0 20px; text-align: center; }
+        
+        .portal-header { margin-bottom: 60px; }
+        .portal-header img { width: 120px; border-radius: 20px; margin-bottom: 25px; border: 4px solid var(--primary); }
+        .portal-header h1 { font-size: 4rem; font-weight: 900 !important; letter-spacing: -3px; margin-bottom: 10px; text-transform: uppercase; }
+        .portal-header p { color: var(--secondary-text); font-size: 1.4rem; font-weight: 800 !important; }
         
         .test-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-top: 40px; }
         .test-card { 
@@ -18,7 +20,7 @@
             transition: 0.3s; cursor: pointer; text-decoration: none; color: inherit;
             display: flex; flex-direction: column; align-items: center; position: relative; overflow: hidden;
         }
-        .test-card:hover { border-color: var(--primary); transform: translateY(-10px); box-shadow: 0 20px 40px rgba(0,0,0,0.8); }
+        .test-card:hover { border-color: var(--primary); transform: translateY(-10px); background: #000; box-shadow: 0 20px 40px rgba(0,0,0,0.8); }
         .test-card h3 { font-size: 1.8rem; font-weight: 900 !important; margin: 20px 0 10px; color: var(--primary); }
         .test-card .icon-circle { 
             width: 80px; height: 80px; border-radius: 50%; background: rgba(225, 29, 72, 0.1); 
@@ -38,7 +40,7 @@
         .ticker-item span { color: var(--primary); }
 
         @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-        @media (max-width: 768px) { .test-grid { grid-template-columns: 1fr; } .verify-section { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { .test-grid { grid-template-columns: 1fr; } .verify-section { grid-template-columns: 1fr; } .portal-header h1 { font-size: 2.5rem; } }
     </style>
 </head>
 <body data-theme="dark">
@@ -47,7 +49,7 @@
             <a href="index.html" class="brand">
                 <img src="gurukul_ias.jpeg" alt="Logo" class="logo-icon">
                 <div class="brand-text">
-                    <h1 id="header-name">GURUKUL IAS</h1>
+                    <h1>GURUKUL IAS</h1>
                     <p>Intelligence Mapping Portal</p>
                 </div>
             </a>
@@ -58,10 +60,11 @@
     </header>
 
     <main class="portal-container">
-        <section class="hero-section">
+        <header class="portal-header">
+            <img src="gurukul_ias.jpeg" alt="GURUKUL IAS">
             <h1>MULTIPLE <span style="color: var(--primary)">INTELLIGENCES</span></h1>
             <p>UNLOCK YOUR COGNITIVE BLUEPRINT. CHOOSE YOUR DEPTH.</p>
-        </section>
+        </header>
 
         <div class="test-grid" id="test-grid">
             <div class="loading-state"><p>INITIALIZING ASSESSMENTS...</p></div>
@@ -87,7 +90,7 @@
         <div class="footer-container">
             <div class="footer-grid">
                 <div class="footer-brand">
-                    <h3 id="footer-name">GURUKUL IAS</h3>
+                    <h3>GURUKUL IAS</h3>
                     <p>Building the foundation for future leaders through scientific cognitive analysis and personalized learning profiles.</p>
                 </div>
                 <div class="footer-section">
@@ -123,7 +126,6 @@
                     document.getElementById('cms-body').innerText = cms.about_mi.body;
                 }
 
-                // Load Settings for header/footer
                 const resT = await fetch('api.php?type=active_tests');
                 const tests = await resT.json();
                 const grid = document.getElementById('test-grid');
