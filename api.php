@@ -66,32 +66,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $type === 'verify_certificate') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && $type === 'questions') {
-    $testId = $_GET['test_id'] ?? ($_GET['test_type'] ?? '2'); 
-    $stmtTest = $pdo->prepare("SELECT * FROM tests WHERE id = ? OR name = ?");
-    $stmtTest->execute([$testId, $testId]);
+    $testId = $_GET['test_id'] ?? '2'; 
+    $stmtTest = $pdo->prepare("SELECT * FROM tests WHERE id = ?");
+    $stmtTest->execute([$testId]);
     $test = $stmtTest->fetch();
 
     if ($test) {
-        if ($test['id'] <= 3) {
-            $types = ['1' => '8', '2' => '56', '3' => '100'];
-            $tType = $types[$test['id']] ?? $test['id'];
-            $stmt = $pdo->prepare("SELECT id, category_index as cat, text_en, text_hi FROM questions WHERE test_type = ? ORDER BY sort_order ASC");
-            $stmt->execute([$tType]);
-            echo json_encode($stmt->fetchAll());
-        } else {
-            $perCat = max(1, floor($test['question_count'] / 8));
-            $allQs = [];
-            for ($i=0; $i<8; $i++) {
-                $stmt = $pdo->prepare("SELECT id, category_index as cat, text_en, text_hi FROM questions WHERE test_type = '100' AND category_index = ? ORDER BY RAND() LIMIT ?");
-                $stmt->execute([$i, $perCat]);
-                $allQs = array_merge($allQs, $stmt->fetchAll());
-            }
-            echo json_encode($allQs);
+        $count = (int)$test['question_count'];
+        $perCat = max(1, floor($count / 8));
+        $allQs = [];
+        for ($i=0; $i<8; $i++) {
+            $stmt = $pdo->prepare("SELECT id, category_index as cat, text_en, text_hi FROM questions WHERE category_index = ? ORDER BY RAND() LIMIT ?");
+            $stmt->execute([$i, $perCat]);
+            $allQs = array_merge($allQs, $stmt->fetchAll());
         }
+        shuffle($allQs);
+        echo json_encode($allQs);
     } else {
-        $stmt = $pdo->prepare("SELECT id, category_index as cat, text_en, text_hi FROM questions WHERE test_type = ? ORDER BY sort_order ASC");
-        $stmt->execute([$testId]);
-        echo json_encode($stmt->fetchAll());
+        echo json_encode(['error' => 'Test not found']);
     }
     exit;
 }
@@ -254,8 +246,8 @@ if (strpos($type, 'admin_') === 0) {
         echo json_encode(['status' => 'success', 'avg' => $avg, 'count' => $count]);
     }
     elseif ($type === 'admin_add_question') {
-        $stmt = $pdo->prepare("INSERT INTO questions (test_type, category_index, text_en, text_hi, sort_order) VALUES (?, ?, ?, ?, (SELECT IFNULL(MAX(sort_order)+1, 0) FROM questions q2 WHERE test_type = ?))");
-        $stmt->execute([$input['test_type'], $input['category_index'], $input['text_en'], $input['text_hi'], $input['test_type']]);
+        $stmt = $pdo->prepare("INSERT INTO questions (test_type, category_index, text_en, text_hi, sort_order) VALUES ('master', ?, ?, ?, (SELECT IFNULL(MAX(sort_order)+1, 0) FROM questions q2))");
+        $stmt->execute([$input['category_index'], $input['text_en'], $input['text_hi']]);
         echo json_encode(['status' => 'success', 'id' => $pdo->lastInsertId()]);
     }
     elseif ($type === 'admin_update_question') {
@@ -279,7 +271,6 @@ if (strpos($type, 'admin_') === 0) {
         echo json_encode(['status' => 'success']);
     }
     elseif ($type === 'admin_delete_test') {
-        if ($input['id'] <= 3) die(json_encode(['error' => 'Cannot delete system tests']));
         $stmt = $pdo->prepare("DELETE FROM tests WHERE id = ?");
         $stmt->execute([$input['id']]);
         echo json_encode(['status' => 'success']);

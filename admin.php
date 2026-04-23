@@ -1,8 +1,8 @@
 <?php
 session_start();
 /**
- * GURUKUL IAS Senior Admin Dashboard v3.5
- * ENFORCED BOLD UI | FULL CRUD RESTORED | POLISHED BATCH UI
+ * GURUKUL IAS Senior Admin Dashboard v3.7
+ * ENFORCED BOLD UI | UNIFIED HEADER/FOOTER SETTINGS | BATCH ANALYTICS
  */
 
 $host = 'localhost'; $db = 'gurukul_mi'; $user = 'root'; $pass = 'root';
@@ -64,7 +64,7 @@ if (isset($_GET['delete_student'])) {
 }
 if (isset($_POST['update_settings'])) {
     foreach ($_POST['settings'] as $key => $value) {
-        $pdo->prepare("UPDATE system_settings SET setting_value = ? WHERE setting_key = ?")->execute([$value, $key]);
+        $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?")->execute([$key, $value, $value]);
     }
     $msg = "Settings Updated";
 }
@@ -86,7 +86,7 @@ if (isset($_GET['export'])) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8"><title>GIAS Admin v3.5</title>
+    <meta charset="UTF-8"><title>GIAS Admin v3.7</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
@@ -113,8 +113,9 @@ if (isset($_GET['export'])) {
         .btn-primary:hover { transform: scale(1.02); background: #be123c; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
         .modal-content { background: #0a0a0a; padding: 40px; border-radius: 40px; border: 3px solid var(--primary); max-width: 600px; width: 90%; }
-        input, select, textarea { width: 100%; padding: 15px; background: #111; border: 2px solid #222; color: #fff; border-radius: 12px; box-sizing: border-box; font-size: 14px; margin-top: 5px; }
-        label { font-size: 11px; color: #444; text-transform: uppercase; margin-top: 15px; display: block; }
+        input, select, textarea { width: 100%; padding: 18px; background: #111; border: 2px solid #222; color: #fff; border-radius: 16px; box-sizing: border-box; font-size: 16px; margin-top: 5px; font-weight: 900 !important; }
+        label { font-size: 12px; color: #666; text-transform: uppercase; margin-top: 20px; display: block; font-weight: 900 !important; }
+        .msg-banner { background: var(--primary); color: #fff; padding: 10px; text-align: center; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -134,6 +135,7 @@ if (isset($_GET['export'])) {
     </div>
 
     <div class="main">
+        <?php if(isset($msg)): ?><div class="msg-banner"><?= $msg ?></div><?php endif; ?>
         <div class="top-bar">
             <h2 style="margin:0; font-size:22px"><?= strtoupper($page) ?></h2>
             <div style="display:flex; gap:12px">
@@ -179,7 +181,7 @@ if (isset($_GET['export'])) {
                             <tr style="<?= $r['is_suspicious']?'background:rgba(225,29,72,0.05)':'' ?>">
                                 <td><strong><?= strtoupper(htmlspecialchars($r['name'])) ?></strong><br><small style="color:#555"><?= $r['student_id'] ?></small></td>
                                 <td><span class="badge" style="background:var(--primary); color:#fff; border:none"><?= $r['total_score'] ?></span></td>
-                                <td><span class="badge"><?= $r['test_type'] ?></span></td>
+                                <td><?= $r['test_type'] ?></td>
                                 <td><?= floor($r['duration']/60) ?>m <?= $r['duration']%60 ?>s</td>
                                 <td style="font-size:11px; color:#444"><?= $r['ip_address'] ?></td>
                                 <td>
@@ -212,11 +214,10 @@ if (isset($_GET['export'])) {
                                 <td><span class="badge" style="color:var(--primary)"><?= $t['question_count'] ?> QS</span></td>
                                 <td><button class="badge" onclick="toggleTest(<?= $t['id'] ?>)" style="cursor:pointer; color:<?= $t['is_active']?'#10b981':'#ef4444' ?>"><?= $t['is_active']?'ACTIVE':'INACTIVE' ?></button></td>
                                 <td>
-                                    <?php if($t['id'] > 3): ?>
-                                        <button class="badge" style="background:#450a0a; color:#ef4444; border:none" onclick="deleteTest(<?= $t['id'] ?>)">DELETE</button>
-                                    <?php else: ?>
-                                        <small style="color:#333">SYSTEM</small>
-                                    <?php endif; ?>
+                                    <div style="display:flex; gap:8px">
+                                        <button class="badge" style="color:var(--primary)" onclick='openTestModal(<?= json_encode($t) ?>)'>EDIT</button>
+                                        <button class="badge" style="color:#ef4444" onclick="deleteTest(<?= $t['id'] ?>)">DEL</button>
+                                    </div>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -226,8 +227,9 @@ if (isset($_GET['export'])) {
 
                 <div id="testModal" class="modal">
                     <div class="modal-content">
-                        <h2 style="margin-top:0; color:var(--primary)">CREATE NEW TEST</h2>
+                        <h2 id="tTitle" style="margin-top:0; color:var(--primary)">CREATE NEW TEST</h2>
                         <form onsubmit="saveTest(event)">
+                            <input type="hidden" id="tId">
                             <label>TEST NAME</label>
                             <input type="text" id="tName" placeholder="E.G. SEMESTER EVALUATION" required>
                             <label>DESCRIPTION</label>
@@ -237,19 +239,35 @@ if (isset($_GET['export'])) {
                                 <?php for($i=8; $i<=96; $i+=8): ?><option value="<?= $i ?>"><?= $i ?> QUESTIONS</option><?php endfor; ?>
                                 <option value="100">100 QUESTIONS</option>
                             </select>
-                            <button type="submit" class="btn btn-primary" style="margin-top:30px; width:100%">PUBLISH TEST</button>
+                            <button type="submit" class="btn btn-primary" style="margin-top:30px; width:100%">SAVE TEST CONFIG</button>
                             <button type="button" class="btn" style="margin-top:10px; width:100%; background:#111; color:#fff" onclick="document.getElementById('testModal').style.display='none'">CANCEL</button>
                         </form>
                     </div>
                 </div>
 
                 <script>
-                    function openTestModal() { document.getElementById('testModal').style.display='flex'; }
+                    function openTestModal(data = null) {
+                        const modal = document.getElementById('testModal');
+                        if (data) {
+                            document.getElementById('tTitle').innerText = "EDIT TEST";
+                            document.getElementById('tId').value = data.id;
+                            document.getElementById('tName').value = data.name;
+                            document.getElementById('tDesc').value = data.description;
+                            document.getElementById('tCount').value = data.question_count;
+                        } else {
+                            document.getElementById('tTitle').innerText = "CREATE NEW TEST";
+                            document.getElementById('tId').value = "";
+                            document.getElementById('tName').value = "";
+                            document.getElementById('tDesc').value = "";
+                        }
+                        modal.style.display='flex';
+                    }
                     async function saveTest(e) {
                         e.preventDefault();
-                        const data = { type: 'admin_add_test', name: document.getElementById('tName').value, description: document.getElementById('tDesc').value, question_count: document.getElementById('tCount').value };
+                        const id = document.getElementById('tId').value;
+                        const data = { type: id ? 'admin_update_test' : 'admin_add_test', id, name: document.getElementById('tName').value, description: document.getElementById('tDesc').value, question_count: document.getElementById('tCount').value };
                         const res = await fetch('api.php', { method: 'POST', body: JSON.stringify(data) });
-                        if ((await res.json()).status === 'success') location.reload();
+                        location.reload();
                     }
                     async function toggleTest(id) {
                         await fetch('api.php', { method: 'POST', body: JSON.stringify({ type: 'admin_toggle_test', id: id }) });
@@ -264,27 +282,20 @@ if (isset($_GET['export'])) {
                 </script>
 
             <?php elseif($page == 'questions'): 
-                $tType = $_GET['test'] ?? '56';
-                $questions = $pdo->prepare("SELECT * FROM questions WHERE test_type = ? ORDER BY sort_order ASC");
-                $questions->execute([$tType]);
-                $data = $questions->fetchAll();
+                $data = $pdo->query("SELECT * FROM questions ORDER BY id DESC")->fetchAll();
             ?>
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px">
-                    <div style="display:flex; gap:10px">
-                        <button onclick="location.href='?p=questions&test=8'" class="btn <?= $tType=='8'?'btn-primary':'btn-dark' ?>" style="background:<?= $tType=='8'?'':'#111' ?>">8Q</button>
-                        <button onclick="location.href='?p=questions&test=56'" class="btn <?= $tType=='56'?'btn-primary':'btn-dark' ?>" style="background:<?= $tType=='56'?'':'#111' ?>">56Q</button>
-                        <button onclick="location.href='?p=questions&test=100'" class="btn <?= $tType=='100'?'btn-primary':'btn-dark' ?>" style="background:<?= $tType=='100'?'':'#111' ?>">100Q</button>
-                    </div>
+                    <h3 style="margin:0; color:#444">MASTER QUESTION POOL (<?= count($data) ?>)</h3>
                     <button class="btn btn-primary" onclick="openQuestionModal()">+ ADD QUESTION</button>
                 </div>
                 <div class="table-container">
                     <table>
-                        <thead><tr><th>#</th><th>Category</th><th>Text (English / Hindi)</th><th>Action</th></tr></thead>
+                        <thead><tr><th>#</th><th>Category</th><th>Question Text</th><th>Action</th></tr></thead>
                         <tbody>
                             <?php $cats = ['Linguistic', 'Logical', 'Musical', 'Spatial', 'Bodily', 'Interpersonal', 'Intrapersonal', 'Naturalist'];
                             foreach($data as $q): ?>
                             <tr>
-                                <td><span class="badge"><?= $q['sort_order']+1 ?></span></td>
+                                <td><span class="badge"><?= $q['id'] ?></span></td>
                                 <td><span class="badge" style="color:#fff; border-color:var(--primary)"><?= strtoupper($cats[$q['category_index']]) ?></span></td>
                                 <td style="font-size:13px"><strong>EN:</strong> <?= htmlspecialchars($q['text_en']) ?><br><strong>HI:</strong> <?= htmlspecialchars($q['text_hi']) ?></td>
                                 <td>
@@ -304,10 +315,8 @@ if (isset($_GET['export'])) {
                         <h2 id="qTitle">ADD QUESTION</h2>
                         <form onsubmit="saveQuestion(event)">
                             <input type="hidden" id="qId">
-                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px">
-                                <div><label>CATEGORY</label><select id="qCat"><?php foreach($cats as $i=>$c): ?><option value="<?= $i ?>"><?= $c ?></option><?php endforeach; ?></select></div>
-                                <div><label>TEST SET</label><input type="text" id="qTest" value="<?= $tType ?>" readonly></div>
-                            </div>
+                            <label>CATEGORY</label>
+                            <select id="qCat"><?php foreach($cats as $i=>$c): ?><option value="<?= $i ?>"><?= $c ?></option><?php endforeach; ?></select>
                             <label>ENGLISH TEXT</label><textarea id="qEn" required style="height:80px"></textarea>
                             <label>HINDI TEXT</label><textarea id="qHi" required style="height:80px"></textarea>
                             <button type="submit" class="btn btn-primary" style="margin-top:30px; width:100%">SAVE QUESTION</button>
@@ -336,9 +345,9 @@ if (isset($_GET['export'])) {
                     async function saveQuestion(e) {
                         e.preventDefault();
                         const id = document.getElementById('qId').value;
-                        const data = { type: id ? 'admin_update_question' : 'admin_add_question', id, test_type: document.getElementById('qTest').value, category_index: document.getElementById('qCat').value, text_en: document.getElementById('qEn').value, text_hi: document.getElementById('qHi').value };
+                        const data = { type: id ? 'admin_update_question' : 'admin_add_question', id, category_index: document.getElementById('qCat').value, text_en: document.getElementById('qEn').value, text_hi: document.getElementById('qHi').value };
                         const res = await fetch('api.php', { method: 'POST', body: JSON.stringify(data) });
-                        if ((await res.json()).status === 'success') location.reload();
+                        location.reload();
                     }
                     async function deleteQuestion(id) {
                         if (confirm('Delete question?')) {
@@ -351,7 +360,7 @@ if (isset($_GET['export'])) {
             <?php elseif($page == 'batches'): 
                 $batches = $pdo->query("SELECT * FROM batches ORDER BY id DESC")->fetchAll();
             ?>
-                <div style="display:flex; justify-content:space-between; margin-bottom:25px">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px">
                     <h3 style="margin:0; color:#444">BATCH MANAGEMENT</h3>
                     <button class="btn btn-primary" onclick="openBatchModal()">+ CREATE BATCH</button>
                 </div>
@@ -375,7 +384,7 @@ if (isset($_GET['export'])) {
 
                 <div id="batchModal" class="modal">
                     <div class="modal-content">
-                        <h2 style="margin-top:0; color:var(--primary)">CREATE BATCH</h2>
+                        <h2 style="margin-top:0; color:var(--primary)">CREATE NEW BATCH</h2>
                         <form onsubmit="saveBatch(event)">
                             <label>BATCH NAME (E.G. CLASS 10-A)</label>
                             <input type="text" id="bName" placeholder="ENTER BATCH NAME" required>
@@ -401,7 +410,7 @@ if (isset($_GET['export'])) {
                         e.preventDefault();
                         const data = { type: 'admin_create_batch', name: document.getElementById('bName').value, access_code: document.getElementById('bCode').value };
                         const res = await fetch('api.php', { method: 'POST', body: JSON.stringify(data) });
-                        if ((await res.json()).status === 'success') location.reload();
+                        location.reload();
                     }
                     let bChart = null;
                     async function viewBatchAnalytics(id, name) {
@@ -443,11 +452,24 @@ if (isset($_GET['export'])) {
                     }
                 </script>
 
-            <?php elseif($page == 'settings'): ?>
-                <div class="table-container" style="padding:40px; max-width:500px">
-                    <h3 style="margin-top:0; color:var(--primary)">SYSTEM MAINTENANCE</h3>
-                    <p style="font-size:13px; color:#444; margin-bottom:30px">GENERATE A COMPLETE SQL DUMP OF ALL STUDENTS, RESULTS, AND CONFIGURATIONS.</p>
-                    <button onclick="location.href='api.php?type=admin_backup_db'" class="btn btn-primary" style="width:100%">DOWNLOAD MASTER BACKUP (.SQL)</button>
+            <?php elseif($page == 'settings'): 
+                $settings = $pdo->query("SELECT * FROM system_settings")->fetchAll(PDO::FETCH_KEY_PAIR);
+            ?>
+                <div class="table-container" style="padding:40px; max-width:600px">
+                    <h3 style="margin-top:0; color:var(--primary)">SYSTEM CONFIGURATION</h3>
+                    <form method="POST">
+                        <?php foreach($settings as $k=>$v): ?>
+                            <div style="margin-bottom:20px">
+                                <label><?= strtoupper(str_replace('_',' ',$k)) ?></label>
+                                <input type="text" name="settings[<?= $k ?>]" value="<?= htmlspecialchars($v) ?>">
+                            </div>
+                        <?php endforeach; ?>
+                        <button type="submit" name="update_settings" class="btn btn-primary" style="width:100%; margin-top:20px">UPDATE PLATFORM SETTINGS</button>
+                    </form>
+
+                    <h3 style="margin-top:50px; color:var(--primary)">DATA MAINTENANCE</h3>
+                    <p style="font-size:13px; color:#444; margin-bottom:20px">DOWNLOAD A FULL SQL DATA DUMP FOR BACKUP PURPOSES.</p>
+                    <button onclick="location.href='api.php?type=admin_backup_db'" class="btn" style="width:100%; background:#111; color:#fff; border:1px solid #333">DOWNLOAD SQL BACKUP</button>
                 </div>
             <?php endif; ?>
         </div>

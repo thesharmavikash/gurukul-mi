@@ -7,50 +7,61 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
-        .portal-container { max-width: 1100px; margin: 50px auto; padding: 20px; text-align: center; }
-        .portal-header { margin-bottom: 60px; }
-        .portal-header img { width: 120px; border-radius: 20px; margin-bottom: 25px; border: 4px solid var(--primary); }
-        .portal-header h1 { font-size: 4rem; font-weight: 900 !important; letter-spacing: -3px; margin-bottom: 10px; text-transform: uppercase; }
-        .portal-header p { color: var(--secondary-text); font-size: 1.4rem; font-weight: 800 !important; }
+        .portal-container { max-width: 1200px; margin: 40px auto; padding: 0 20px; text-align: center; }
+        .hero-section { padding: 60px 0; margin-bottom: 40px; }
+        .hero-section h1 { font-size: 4.5rem; font-weight: 900 !important; letter-spacing: -3px; margin-bottom: 10px; }
+        .hero-section p { color: var(--secondary-text); font-size: 1.4rem; font-weight: 800 !important; }
         
-        .test-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; margin-top: 60px; }
+        .test-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-top: 40px; }
         .test-card { 
             background: var(--card); border: 2px solid var(--border); padding: 50px 30px; border-radius: 32px; 
-            transition: all 0.3s; cursor: pointer; text-decoration: none; color: inherit;
+            transition: 0.3s; cursor: pointer; text-decoration: none; color: inherit;
             display: flex; flex-direction: column; align-items: center; position: relative; overflow: hidden;
         }
-        .test-card:hover { border-color: var(--primary); transform: translateY(-10px); background: #000; box-shadow: 0 20px 40px rgba(0,0,0,0.8); }
-        .test-card h3 { font-size: 1.8rem; font-weight: 900 !important; margin: 20px 0 10px; color: var(--primary); text-transform: uppercase; }
-        .test-card p { font-size: 1rem; color: var(--secondary-text); line-height: 1.4; font-weight: 700 !important; }
+        .test-card:hover { border-color: var(--primary); transform: translateY(-10px); box-shadow: 0 20px 40px rgba(0,0,0,0.8); }
+        .test-card h3 { font-size: 1.8rem; font-weight: 900 !important; margin: 20px 0 10px; color: var(--primary); }
         .test-card .icon-circle { 
-            width: 90px; height: 90px; border-radius: 50%; background: rgba(225, 29, 72, 0.1); 
+            width: 80px; height: 80px; border-radius: 50%; background: rgba(225, 29, 72, 0.1); 
             display: flex; align-items: center; justify-content: center; color: var(--primary);
-            margin-bottom: 15px; transition: 0.3s; border: 2px solid transparent;
+            margin-bottom: 10px; border: 2px solid transparent;
         }
-        .test-card:hover .icon-circle { background: var(--primary); color: #fff; transform: scale(1.1); border-color: #fff; }
-        
-        .verify-section { margin: 80px 0; padding: 60px; background: var(--card); border-radius: 40px; border: 2px solid var(--border); text-align: left; display: grid; grid-template-columns: 1.2fr 1fr; gap: 50px; align-items: center; }
-        .verify-input-group { position: relative; margin-top: 30px; }
-        .verify-input { width: 100%; padding: 25px 35px; background: var(--input-bg); border: 3px solid var(--border); border-radius: 20px; color: #fff; font-weight: 900 !important; font-size: 20px; outline: none; transition: 0.3s; box-sizing: border-box; }
-        .verify-input:focus { border-color: var(--primary); background: #000; }
-        .verify-btn { position: absolute; right: 12px; top: 12px; bottom: 12px; background: var(--primary); color: #fff; border: none; padding: 0 35px; border-radius: 12px; font-weight: 900 !important; cursor: pointer; text-transform: uppercase; }
+        .test-card:hover .icon-circle { background: var(--primary); color: #fff; border-color: #fff; }
 
-        .ticker-wrap { position: fixed; bottom: 0; left: 0; width: 100%; background: #000; border-top: 3px solid var(--primary); padding: 15px 0; z-index: 1000; overflow: hidden; }
+        .verify-section { margin: 80px 0; padding: 60px; background: var(--card); border-radius: 40px; border: 2px solid var(--border); text-align: left; display: grid; grid-template-columns: 1.2fr 1fr; gap: 50px; align-items: center; }
+        .verify-input-group { position: relative; margin-top: 20px; }
+        .verify-input { width: 100%; padding: 25px 35px; background: var(--input-bg); border: 3px solid var(--border); border-radius: 20px; color: #fff; font-weight: 900 !important; font-size: 20px; outline: none; box-sizing: border-box; }
+        .verify-btn { position: absolute; right: 12px; top: 12px; bottom: 12px; background: var(--primary); color: #fff; border: none; padding: 0 35px; border-radius: 12px; font-weight: 900 !important; cursor: pointer; }
+
+        .ticker-wrap { background: #111; padding: 12px 0; overflow: hidden; border-top: 1px solid #222; }
         .ticker { display: flex; gap: 60px; animation: ticker 40s linear infinite; white-space: nowrap; }
-        .ticker-item { font-size: 14px; font-weight: 900 !important; color: #fff; display: flex; align-items: center; gap: 10px; text-transform: uppercase; }
-        .ticker-item .dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 10px var(--primary); }
+        .ticker-item { font-size: 13px; font-weight: 800 !important; color: #666; display: flex; align-items: center; gap: 10px; }
+        .ticker-item span { color: var(--primary); }
 
         @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-        @media (max-width: 768px) { .test-grid { grid-template-columns: 1fr; } .verify-section { grid-template-columns: 1fr; padding: 40px; } .portal-header h1 { font-size: 2.5rem; } }
+        @media (max-width: 768px) { .test-grid { grid-template-columns: 1fr; } .verify-section { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body data-theme="dark">
-    <div class="portal-container">
-        <header class="portal-header">
-            <img src="gurukul_ias.jpeg" alt="GURUKUL IAS">
+    <header class="site-header">
+        <div class="header-container">
+            <a href="index.html" class="brand">
+                <img src="gurukul_ias.jpeg" alt="Logo" class="logo-icon">
+                <div class="brand-text">
+                    <h1 id="header-name">GURUKUL IAS</h1>
+                    <p>Intelligence Mapping Portal</p>
+                </div>
+            </a>
+            <div class="header-actions">
+                <button class="btn-primary" onclick="location.href='login.html'" style="padding: 10px 25px; font-size: 14px;">STUDENT LOGIN</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="portal-container">
+        <section class="hero-section">
             <h1>MULTIPLE <span style="color: var(--primary)">INTELLIGENCES</span></h1>
             <p>UNLOCK YOUR COGNITIVE BLUEPRINT. CHOOSE YOUR DEPTH.</p>
-        </header>
+        </section>
 
         <div class="test-grid" id="test-grid">
             <div class="loading-state"><p>INITIALIZING ASSESSMENTS...</p></div>
@@ -58,8 +69,8 @@
 
         <section class="verify-section">
             <div>
-                <h2 style="font-size: 2.5rem; font-weight: 900 !important; margin: 0; text-transform: uppercase;">Verify <span style="color: var(--primary)">Certificate</span></h2>
-                <p style="color: var(--secondary-text); margin-top: 15px; font-size: 1.1rem;">ENTER STUDENT ID OR HASH TO VERIFY RECORDS.</p>
+                <h2 style="font-size: 2.5rem; font-weight: 900 !important; margin: 0;">VERIFY <span style="color: var(--primary)">CERTIFICATE</span></h2>
+                <p style="color: var(--secondary-text); margin-top: 10px; font-size: 1.1rem;">ENTER STUDENT ID OR HASH TO VERIFY AUTHENTIC RECORDS.</p>
                 <div class="verify-input-group">
                     <input type="text" id="v-hash" class="verify-input" placeholder="GIAS-2026-XXXX">
                     <button onclick="verify()" class="verify-btn">VERIFY</button>
@@ -70,29 +81,49 @@
                 <p id="cms-body" style="font-size: 1rem; color: var(--secondary-text); line-height: 1.5; margin-top: 15px;">Multiple Intelligences (MI) is a scientific theory about human cognitive diversity and learning potential.</p>
             </div>
         </section>
+    </main>
 
-        <div class="auth-actions" style="border-top: 2px solid var(--border); padding-top: 50px;">
-            <p style="color: var(--secondary-text); margin-bottom: 25px; font-size: 1.1rem; text-transform: uppercase;">MANAGE PROFILE OR VIEW HISTORY</p>
-            <button class="btn-primary" onclick="location.href='login.html'">STUDENT DASHBOARD</button>
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <h3 id="footer-name">GURUKUL IAS</h3>
+                    <p>Building the foundation for future leaders through scientific cognitive analysis and personalized learning profiles.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <p><a href="index.html" style="color: inherit; text-decoration: none;">Assessments</a></p>
+                    <p><a href="login.html" style="color: inherit; text-decoration: none;">Student Portal</a></p>
+                    <p><a href="verify.php" style="color: inherit; text-decoration: none;">Verify Result</a></p>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact Us</h4>
+                    <p id="footer-address">123 Excellence Way, Delhi</p>
+                    <p id="footer-contact">+91 98765 43210</p>
+                    <p id="footer-email">help@gurukulias.com</p>
+                </div>
+            </div>
+            <div class="footer-bottom" id="footer-copyright">
+                © 2026 GURUKUL IAS. ALL RIGHTS RESERVED.
+            </div>
         </div>
-    </div>
+    </footer>
 
     <div class="ticker-wrap">
-        <div class="ticker" id="ticker">
-            <!-- Ticker items injected here -->
-        </div>
+        <div class="ticker" id="ticker"></div>
     </div>
 
     <script>
         async function init() {
             try {
-                const resC = await fetch('api.php?type=homepage_cms');
-                const cms = await resC.json();
+                const resCMS = await fetch('api.php?type=homepage_cms');
+                const cms = await resCMS.json();
                 if (cms.about_mi) {
                     document.getElementById('cms-title').innerText = cms.about_mi.title.toUpperCase();
                     document.getElementById('cms-body').innerText = cms.about_mi.body;
                 }
 
+                // Load Settings for header/footer
                 const resT = await fetch('api.php?type=active_tests');
                 const tests = await resT.json();
                 const grid = document.getElementById('test-grid');
@@ -121,9 +152,9 @@
             const res = await fetch('api.php?type=recent_completions');
             const data = await res.json();
             const ticker = document.getElementById('ticker');
-            if (data && Array.isArray(data)) {
+            if (data && Array.isArray(data) && data.length > 0) {
                 ticker.innerHTML = data.map(item => `
-                    <div class="ticker-item"><span class="dot"></span> ${item.name.toUpperCase()} COMPLETED ${item.test_type.toUpperCase()} ASSESSMENT</div>
+                    <div class="ticker-item"><span class="dot" style="width:8px; height:8px; background:var(--primary); border-radius:50%; display:inline-block"></span> ${item.name.toUpperCase()} COMPLETED <span>${item.test_type.toUpperCase()}</span></div>
                 `).join('') + ticker.innerHTML;
             }
         }

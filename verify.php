@@ -9,8 +9,8 @@ $hash = $_GET['v'] ?? '';
 $result = null;
 
 if ($hash) {
-    $stmt = $pdo->prepare("SELECT r.*, s.name, s.student_id FROM assessment_results r JOIN students s ON r.student_id = s.id WHERE r.verification_hash = ?");
-    $stmt->execute([$hash]);
+    $stmt = $pdo->prepare("SELECT r.*, s.name, s.student_id FROM assessment_results r JOIN students s ON r.student_id = s.id WHERE r.verification_hash = ? OR s.student_id = ?");
+    $stmt->execute([$hash, $hash]);
     $result = $stmt->fetch();
 }
 ?>
@@ -20,43 +20,58 @@ if ($hash) {
     <meta charset="UTF-8">
     <title>Verify MI Result - GURUKUL IAS</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
     <style>
-        :root { --primary: #e11d48; --bg: #f8fafc; --card: #fff; --text: #0f172a; --border: #e2e8f0; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
-        .card { background: var(--card); padding: 40px; border-radius: 32px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); max-width: 500px; width: 100%; border: 1px solid var(--border); text-align: center; }
-        .logo { width: 80px; margin-bottom: 20px; border-radius: 12px; border: 2px solid var(--primary); }
-        h1 { font-size: 24px; font-weight: 900; margin: 0 0 10px; color: var(--primary); }
-        .status { padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 14px; display: inline-block; margin-bottom: 30px; }
-        .valid { background: #d1fae5; color: #065f46; }
-        .invalid { background: #fee2e2; color: #991b1b; }
-        .info-grid { text-align: left; background: #f1f5f9; padding: 20px; border-radius: 20px; margin-bottom: 30px; }
-        .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0; }
-        .info-row:last-child { border: none; }
-        .label { color: #64748b; font-size: 13px; font-weight: bold; text-transform: uppercase; }
-        .val { font-weight: 700; }
+        .verify-card { max-width: 600px; margin: 80px auto; background: var(--card); padding: 60px; border-radius: 40px; border: 3px solid var(--border); box-shadow: 0 30px 60px rgba(0,0,0,0.5); text-align: center; }
+        .status-badge { padding: 12px 25px; border-radius: 40px; font-weight: 900 !important; font-size: 14px; text-transform: uppercase; margin-bottom: 40px; display: inline-block; }
+        .valid { background: #065f46; color: #34d399; border: 2px solid #34d399; }
+        .invalid { background: #7f1d1d; color: #f87171; border: 2px solid #f87171; }
+        .data-row { display: flex; justify-content: space-between; padding: 20px 0; border-bottom: 2px solid var(--border); }
+        .data-row:last-child { border: none; }
+        .data-label { color: #444; font-size: 13px; text-transform: uppercase; }
+        .data-val { color: #fff; font-size: 18px; }
     </style>
 </head>
-<body>
-    <div class="card">
-        <img src="gurukul_ias.jpeg" alt="Logo" class="logo">
-        <h1>Result Verification</h1>
-        
+<body data-theme="dark">
+    <header class="site-header">
+        <div class="header-container">
+            <a href="index.html" class="brand">
+                <img src="gurukul_ias.jpeg" alt="Logo" class="logo-icon">
+                <div class="brand-text">
+                    <h1>GURUKUL IAS</h1>
+                    <p>Verification System</p>
+                </div>
+            </a>
+        </div>
+    </header>
+
+    <main class="verify-card">
         <?php if ($result): ?>
-            <div class="status valid">✓ VERIFIED AUTHENTIC</div>
-            <div class="info-grid">
-                <div class="info-row"><span class="label">Student Name</span><span class="val"><?= htmlspecialchars($result['name']) ?></span></div>
-                <div class="info-row"><span class="label">Student ID</span><span class="val"><?= $result['student_id'] ?></span></div>
-                <div class="info-row"><span class="label">Score</span><span class="val"><?= $result['total_score'] ?></span></div>
-                <div class="info-row"><span class="label">Learning Profile</span><span class="val"><?= $result['grade'] ?></span></div>
-                <div class="info-row"><span class="label">Issue Date</span><span class="val"><?= date('d F, Y', strtotime($result['created_at'])) ?></span></div>
+            <div class="status-badge valid">✓ VERIFIED AUTHENTIC</div>
+            <h2 style="font-size: 2rem; margin-bottom: 40px; text-transform: uppercase;">ASSESSMENT <span style="color: var(--primary)">VERIFIED</span></h2>
+            
+            <div style="background: #000; padding: 30px; border-radius: 24px; border: 2px solid var(--primary); text-align: left;">
+                <div class="data-row"><span class="data-label">Full Name</span><span class="data-val"><?= strtoupper(htmlspecialchars($result['name'])) ?></span></div>
+                <div class="data-row"><span class="data-label">Student ID</span><span class="data-val"><?= $result['student_id'] ?></span></div>
+                <div class="data-row"><span class="data-label">Score</span><span class="data-val" style="color: var(--primary); font-size: 24px;"><?= $result['total_score'] ?></span></div>
+                <div class="data-row"><span class="data-label">Learning Type</span><span class="data-val"><?= $result['grade'] ?></span></div>
+                <div class="data-row"><span class="data-label">Date Issued</span><span class="data-val"><?= date('d M, Y', strtotime($result['created_at'])) ?></span></div>
             </div>
-            <p style="font-size:12px; color:#64748b">This record matches our official database.</p>
+            
+            <p style="margin-top: 40px; color: #444; font-size: 13px;">THIS IS A DIGITALLY VERIFIED DOCUMENT FROM GURUKUL IAS RECORDS.</p>
         <?php else: ?>
-            <div class="status invalid">⚠ INVALID RECORD</div>
-            <p>We could not find an official record matching this verification code.</p>
+            <div class="status-badge invalid">⚠ RECORD NOT FOUND</div>
+            <h2 style="font-size: 2rem; margin-bottom: 30px; text-transform: uppercase;">INVALID <span style="color: var(--primary)">CREDENTIALS</span></h2>
+            <p style="color: var(--secondary-text); font-size: 1.2rem; line-height: 1.6;">THE PROVIDED HASH OR STUDENT ID DOES NOT MATCH ANY COMPLETED ASSESSMENT IN OUR SECURE DATABASE.</p>
         <?php endif; ?>
-        
-        <a href="index.html" style="color:var(--primary); text-decoration:none; font-weight:bold; font-size:14px;">Back to GURUKUL IAS</a>
-    </div>
+
+        <button class="btn-primary" onclick="location.href='index.html'" style="margin-top: 50px; width: 100%;">BACK TO PORTAL</button>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-bottom">© 2026 GURUKUL IAS. ALL RIGHTS RESERVED.</div>
+        </div>
+    </footer>
 </body>
 </html>

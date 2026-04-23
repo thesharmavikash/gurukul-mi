@@ -3,49 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MI Assessment - GURUKUL IAS</title>
+    <title>Assessment - GURUKUL IAS</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        #test-subtitle { font-size: 13px; color: var(--secondary-text); text-transform: uppercase; font-weight: 800 !important; }
+        #mi-watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 8rem; color: rgba(255,255,255,0.03); pointer-events: none; z-index: 0; white-space: nowrap; font-weight: 900 !important; text-transform: uppercase; }
+        .security-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 10000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        .security-card { background: var(--card); padding: 50px; border-radius: 40px; border: 3px solid var(--primary); text-align: center; max-width: 500px; }
+    </style>
 </head>
-<body>
-    <nav class="header">
-        <div class="container header-container">
-            <div class="brand" onclick="location.href='index.html'" style="cursor:pointer">
-                <img src="gurukul_ias.jpeg" alt="Logo" class="logo">
+<body data-theme="dark">
+    <div id="mi-watermark">GIAS SECURE</div>
+
+    <header class="site-header">
+        <div class="header-container">
+            <a href="index.html" class="brand">
+                <img src="gurukul_ias.jpeg" alt="Logo" class="logo-icon">
                 <div class="brand-text">
                     <h1>GURUKUL IAS</h1>
-                    <p id="test-subtitle">Loading assessment...</p>
+                    <p id="test-subtitle">Intelligence Assessment</p>
                 </div>
-            </div>
-            <div id="header-actions" class="header-actions"></div>
+            </a>
+            <div class="header-actions" id="header-actions"></div>
         </div>
-    </nav>
+    </header>
 
-    <main class="container main-content" id="app">
-        <div class="loading-state">
-            <div class="spinner"></div>
-            <p>Initializing assessment engine...</p>
+    <div class="security-overlay" id="sec-overlay">
+        <div class="security-card">
+            <h2 style="color: var(--primary); font-size: 2.5rem; margin-bottom: 20px;">SECURITY ALERT</h2>
+            <p style="font-size: 1.2rem; line-height: 1.5; margin-bottom: 30px;">WINDOW FOCUS LOST. THIS VIOLATION HAS BEEN LOGGED. PLEASE RETURN TO FULLSCREEN TO CONTINUE.</p>
+            <button class="btn-primary" onclick="resumeTest()">RESUME ASSESSMENT</button>
         </div>
-    </main>
+    </div>
 
-    <footer>
-        <div class="container">
+    <main class="container" id="app-container"></main>
+
+    <footer class="site-footer">
+        <div class="footer-container">
             <div class="footer-grid">
                 <div class="footer-brand">
                     <h3>GURUKUL IAS</h3>
-                    <p>Building the foundation for future leaders through scientific cognitive analysis.</p>
+                    <p>Building the foundation for future leaders through scientific cognitive analysis and personalized learning profiles.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <p><a href="index.html" style="color: inherit; text-decoration: none;">Assessments</a></p>
+                    <p><a href="login.html" style="color: inherit; text-decoration: none;">Student Portal</a></p>
+                </div>
+                <div class="footer-section">
+                    <h4>Support</h4>
+                    <p>help@gurukulias.com</p>
+                    <p>+91 98765 43210</p>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2026 GURUKUL IAS. All rights reserved.</p>
+                © 2026 GURUKUL IAS. ALL RIGHTS RESERVED.
             </div>
         </div>
     </footer>
 
-    <script type="module" src="test.js"></script>
+    <script src="mappings.js"></script>
+    <script src="translations.js"></script>
+    <script src="integrity.js"></script>
+    <script src="test.js"></script>
+    <script>
+        function resumeTest() {
+            document.getElementById('sec-overlay').style.display = 'none';
+            if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+        }
+        window.addEventListener('mi_violation', () => {
+            document.getElementById('sec-overlay').style.display = 'flex';
+        });
+    </script>
 </body>
 </html>

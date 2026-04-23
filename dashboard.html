@@ -3,51 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Dashboard - GURUKUL IAS</title>
+    <title>Dashboard - GURUKUL IAS</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .dashboard-container { max-width: 1200px; margin: 40px auto; padding: 30px; }
-        .welcome-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 60px; padding-bottom: 30px; border-bottom: 4px solid var(--primary); }
-        .history-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 50px; }
-        .history-list { background: var(--card); border: 2px solid var(--border); border-radius: 32px; padding: 30px; }
-        .history-item { 
-            padding: 20px; border-bottom: 2px solid var(--border); display: flex; justify-content: space-between; align-items: center;
-            transition: 0.3s; cursor: pointer;
-        }
+        .dashboard-container { max-width: 1200px; margin: 40px auto; padding: 0 30px; }
+        .welcome-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 60px; padding-bottom: 30px; border-bottom: 4px solid var(--primary); }
+        .welcome-header h2 { font-size: 3.5rem; font-weight: 900 !important; margin: 0; letter-spacing: -2px; text-transform: uppercase; }
+        .history-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 40px; margin-bottom: 80px; }
+        .history-list { background: var(--card); border: 2px solid var(--border); border-radius: 32px; padding: 30px; overflow: hidden; }
+        .history-item { padding: 20px; border-bottom: 2px solid var(--border); display: flex; justify-content: space-between; align-items: center; transition: 0.2s; cursor: pointer; }
         .history-item:hover { background: #000; border-color: var(--primary); }
         .history-item:last-child { border-bottom: none; }
         .chart-card { background: var(--card); border: 2px solid var(--border); border-radius: 32px; padding: 40px; }
-        .empty-state { text-align: center; padding: 80px; color: var(--secondary-text); font-weight: 900 !important; }
     </style>
 </head>
 <body data-theme="dark">
-    <div class="dashboard-container">
+    <header class="site-header">
+        <div class="header-container">
+            <a href="index.html" class="brand">
+                <img src="gurukul_ias.jpeg" alt="Logo" class="logo-icon">
+                <div class="brand-text">
+                    <h1>GURUKUL IAS</h1>
+                    <p>Student Dashboard</p>
+                </div>
+            </a>
+            <div class="header-actions">
+                <button class="btn-primary" onclick="location.href='index.html'" style="padding: 10px 25px; font-size: 14px;">NEW TEST</button>
+                <button class="btn-secondary" onclick="logout()" style="padding: 10px 25px; font-size: 14px; border-color: #ef4444; color: #ef4444;">LOGOUT</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard-container">
         <div class="welcome-header">
             <div>
-                <h1 style="font-size: 3rem; font-weight: 900 !important; margin: 0; text-transform: uppercase; letter-spacing: -2px;">HELLO, <span id="student-name" style="color: var(--primary)">STUDENT</span></h1>
-                <p id="student-id" style="color: var(--secondary-text); font-weight: 900 !important; font-size: 1.2rem; margin-top: 5px;"></p>
-            </div>
-            <div style="display: flex; gap: 20px;">
-                <button class="btn-primary" onclick="location.href='index.html'">NEW TEST</button>
-                <button class="btn-secondary" onclick="logout()">LOGOUT</button>
+                <p style="color: var(--primary); margin: 0; font-size: 14px;">AUTHENTICATED STUDENT</p>
+                <h2 id="student-name">HELLO</h2>
+                <p id="student-id" style="color: var(--secondary-text); font-size: 1.2rem;"></p>
             </div>
         </div>
 
         <div class="history-grid">
             <div class="history-list">
-                <h3 style="margin-top: 0; margin-bottom: 25px; color: var(--primary); text-transform: uppercase;">ASSESSMENT HISTORY</h3>
+                <h4 style="margin-top: 0; color: #444; text-transform: uppercase; margin-bottom: 20px;">Past Assessments</h4>
                 <div id="history-items">
-                    <div class="loading-state">FETCHING RECORDS...</div>
+                    <div class="loading-state">FETCHING...</div>
                 </div>
             </div>
             <div class="chart-card">
-                <h3 style="margin-top: 0; margin-bottom: 30px; text-transform: uppercase;">INTELLIGENCE EVOLUTION</h3>
+                <h4 style="margin-top: 0; color: #444; text-transform: uppercase; margin-bottom: 30px;">Growth Trajectory</h4>
                 <canvas id="evolutionChart"></canvas>
             </div>
         </div>
-    </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-bottom">© 2026 GURUKUL IAS. ALL RIGHTS RESERVED.</div>
+        </div>
+    </footer>
 
     <script>
         const student = JSON.parse(localStorage.getItem('student'));
@@ -66,19 +82,17 @@
             const container = document.getElementById('history-items');
             
             if (!data || data.length === 0) {
-                container.innerHTML = '<div class="empty-state">NO ASSESSMENTS FOUND.</div>';
+                container.innerHTML = '<div style="padding: 60px; text-align: center; color: #333;">NO RECORDS FOUND.</div>';
                 return;
             }
 
             container.innerHTML = data.map(item => `
-                <div class="history-item" onclick="viewResult('${item.verification_hash}')">
+                <div class="history-item" onclick="location.href='verify.php?v=${item.verification_hash}'">
                     <div>
-                        <div style="font-weight:900 !important; text-transform:uppercase">${item.test_type}</div>
-                        <div style="font-size:13px; color:var(--secondary-text)">${new Date(item.created_at).toLocaleDateString()}</div>
+                        <div style="font-size: 18px; color: #fff;">${item.test_type.toUpperCase()}</div>
+                        <div style="font-size: 12px; color: #444;">${new Date(item.created_at).toLocaleDateString()}</div>
                     </div>
-                    <div style="text-align:right">
-                        <div class="badge" style="background:var(--primary); color:#fff; border:none; padding:5px 12px">${item.total_score}</div>
-                    </div>
+                    <div class="badge" style="background: var(--primary); color: #fff; border: none; padding: 6px 15px;">${item.total_score}</div>
                 </div>
             `).join('');
 
@@ -92,36 +106,28 @@
                 data: {
                     labels: history.map(h => new Date(h.created_at).toLocaleDateString()),
                     datasets: [{
-                        label: 'Total Score',
+                        label: 'Score',
                         data: history.map(h => h.total_score),
                         borderColor: '#e11d48',
-                        backgroundColor: 'rgba(225, 29, 72, 0.2)',
+                        backgroundColor: 'rgba(225, 29, 72, 0.1)',
                         fill: true,
-                        tension: 0.3,
-                        borderWidth: 4,
-                        pointRadius: 6,
+                        tension: 0.4,
+                        borderWidth: 5,
+                        pointRadius: 8,
                         pointBackgroundColor: '#fff'
                     }]
                 },
                 options: {
                     scales: { 
-                        y: { beginAtZero: true, grid: { color: '#1a1a1a' } },
-                        x: { grid: { display: false } }
+                        y: { beginAtZero: true, grid: { color: '#111' }, ticks: { color: '#444' } },
+                        x: { grid: { display: false }, ticks: { color: '#444' } }
                     },
                     plugins: { legend: { display: false } }
                 }
             });
         }
 
-        function viewResult(hash) {
-            location.href = `verify.php?v=${hash}`;
-        }
-
-        function logout() {
-            localStorage.removeItem('student');
-            location.href = 'login.html';
-        }
-
+        function logout() { localStorage.removeItem('student'); location.href = 'login.html'; }
         loadHistory();
     </script>
 </body>

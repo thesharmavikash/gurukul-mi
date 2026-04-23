@@ -7,71 +7,69 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
-        .auth-container { max-width: 500px; margin: 100px auto; padding: 60px; background: var(--card); border: 3px solid var(--border); border-radius: 40px; box-shadow: 0 30px 60px rgba(0,0,0,0.5); }
-        .auth-container h2 { font-size: 3rem; font-weight: 900 !important; margin-bottom: 40px; text-align: center; text-transform: uppercase; letter-spacing: -2px; }
-        .auth-footer { margin-top: 40px; text-align: center; color: var(--secondary-text); font-size: 1rem; font-weight: 800 !important; }
-        .auth-footer a { color: var(--primary); text-decoration: none; border-bottom: 2px solid var(--primary); }
+        .auth-container { max-width: 500px; margin: 80px auto; padding: 60px; background: var(--card); border: 3px solid var(--border); border-radius: 40px; box-shadow: 0 30px 60px rgba(0,0,0,0.5); }
+        .auth-container h2 { font-size: 2.5rem; font-weight: 900 !important; margin-bottom: 30px; text-align: center; text-transform: uppercase; }
     </style>
 </head>
 <body data-theme="dark">
-    <div class="auth-container">
-        <h2>STUDENT <span style="color: var(--primary)">LOGIN</span></h2>
-        <form id="login-form">
-            <div class="input-group">
-                <label>EMAIL OR MOBILE</label>
-                <input type="text" id="login" placeholder="ENTER CREDENTIALS" required>
+    <header class="site-header">
+        <div class="header-container">
+            <a href="index.html" class="brand">
+                <img src="gurukul_ias.jpeg" alt="Logo" class="logo-icon">
+                <div class="brand-text">
+                    <h1>GURUKUL IAS</h1>
+                    <p>Student Portal</p>
+                </div>
+            </a>
+            <div class="header-actions">
+                <button class="btn-secondary" onclick="location.href='index.html'" style="padding: 8px 20px; font-size: 13px;">BACK TO HOME</button>
             </div>
-            <div class="input-group">
-                <label>PASSWORD</label>
-                <input type="password" id="password" placeholder="••••••••" required>
-            </div>
-            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 30px; font-size: 20px;">SIGN IN</button>
-        </form>
-        <div class="auth-footer">
-            NEW HERE? <a href="#" onclick="showRegister()">CREATE ACCOUNT</a>
         </div>
-    </div>
+    </header>
 
-    <div id="register-container" class="auth-container" style="display: none;">
-        <h2>JOIN <span style="color: var(--primary)">GURUKUL</span></h2>
-        <form id="register-form">
-            <div class="input-group">
-                <label>FULL NAME</label>
-                <input type="text" id="name" placeholder="ENTER NAME" required>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
+    <main class="auth-container">
+        <div id="login-view">
+            <h2>STUDENT <span style="color: var(--primary)">LOGIN</span></h2>
+            <form id="login-form">
                 <div class="input-group">
-                    <label>AGE</label>
-                    <input type="number" id="age" placeholder="AGE" required>
+                    <label>EMAIL OR MOBILE</label>
+                    <input type="text" id="login" placeholder="CREDENTIALS" required>
                 </div>
                 <div class="input-group">
-                    <label>MOBILE</label>
-                    <input type="tel" id="mobile" placeholder="10 DIGITS" required>
+                    <label>PASSWORD</label>
+                    <input type="password" id="password" placeholder="••••••••" required>
                 </div>
-            </div>
-            <div class="input-group">
-                <label>EMAIL ADDRESS</label>
-                <input type="email" id="email" placeholder="EMAIL@EXAMPLE.COM" required>
-            </div>
-            <div class="input-group">
-                <label>CREATE PASSWORD</label>
-                <input type="password" id="reg-password" placeholder="PASSWORD" required>
-            </div>
-            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 30px; font-size: 20px;">REGISTER</button>
-        </form>
-        <div class="auth-footer">
-            ALREADY REGISTERED? <a href="#" onclick="showLogin()">LOGIN NOW</a>
+                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 20px;">SIGN IN</button>
+            </form>
+            <p style="text-align: center; margin-top: 30px; font-size: 14px;">NEW HERE? <a href="#" onclick="toggleAuth(true)" style="color: var(--primary); text-decoration: none; border-bottom: 2px solid var(--primary);">CREATE ACCOUNT</a></p>
         </div>
-    </div>
+
+        <div id="register-view" style="display: none;">
+            <h2>JOIN <span style="color: var(--primary)">GURUKUL</span></h2>
+            <form id="register-form">
+                <div class="input-group"><label>NAME</label><input type="text" id="name" required></div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="input-group"><label>AGE</label><input type="number" id="age" required></div>
+                    <div class="input-group"><label>MOBILE</label><input type="tel" id="mobile" required></div>
+                </div>
+                <div class="input-group"><label>EMAIL</label><input type="email" id="email" required></div>
+                <div class="input-group"><label>PASSWORD</label><input type="password" id="reg-password" required></div>
+                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 20px;">REGISTER</button>
+            </form>
+            <p style="text-align: center; margin-top: 30px; font-size: 14px;">ALREADY REGISTERED? <a href="#" onclick="toggleAuth(false)" style="color: var(--primary); text-decoration: none; border-bottom: 2px solid var(--primary);">LOGIN</a></p>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-bottom">© 2026 GURUKUL IAS. ALL RIGHTS RESERVED.</div>
+        </div>
+    </footer>
 
     <script>
-        function showRegister() {
-            document.querySelector('.auth-container').style.display = 'none';
-            document.getElementById('register-container').style.display = 'block';
-        }
-        function showLogin() {
-            document.getElementById('register-container').style.display = 'none';
-            document.querySelector('.auth-container').style.display = 'block';
+        function toggleAuth(isRegister) {
+            document.getElementById('login-view').style.display = isRegister ? 'none' : 'block';
+            document.getElementById('register-view').style.display = isRegister ? 'block' : 'none';
         }
 
         document.getElementById('login-form').onsubmit = async (e) => {
@@ -89,9 +87,7 @@
             if (data.status === 'success') {
                 localStorage.setItem('student', JSON.stringify(data.user));
                 location.href = 'dashboard.html';
-            } else {
-                alert(data.error);
-            }
+            } else alert(data.error);
         };
 
         document.getElementById('register-form').onsubmit = async (e) => {
@@ -109,12 +105,8 @@
                 })
             });
             const data = await res.json();
-            if (data.status === 'success') {
-                alert('Account created! Please login.');
-                showLogin();
-            } else {
-                alert(data.error);
-            }
+            if (data.status === 'success') { alert('Account created! Login now.'); toggleAuth(false); }
+            else alert(data.error);
         };
     </script>
 </body>
