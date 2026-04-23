@@ -1,16 +1,32 @@
 <?php
-// GURUKUL IAS Result Verification Page
+/**
+ * GURUKUL IAS Result Verification Page
+ * Optimized for ID and Hash lookups
+ */
+
 $host = 'localhost'; $db = 'gurukul_mi'; $user = 'root'; $pass = 'root';
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-} catch (Exception $e) { die("System Error"); }
+    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+    ]);
+} catch (Exception $e) { die("System Error: Maintenance in progress."); }
 
-$hash = $_GET['v'] ?? '';
+$v = trim($_GET['v'] ?? '');
 $result = null;
 
-if ($hash) {
-    $stmt = $pdo->prepare("SELECT r.*, s.name, s.student_id FROM assessment_results r JOIN students s ON r.student_id = s.id WHERE r.verification_hash = ? OR s.student_id = ?");
-    $stmt->execute([$hash, $hash]);
+if ($v) {
+    // 1. Try to find assessment by hash OR student ID
+    $stmt = $pdo->prepare("
+        SELECT r.*, s.name as student_name, s.student_id as display_id 
+        FROM assessment_results r 
+        JOIN students s ON r.student_id = s.id 
+        WHERE r.verification_hash = ? 
+           OR s.student_id = ? 
+        ORDER BY r.created_at DESC 
+        LIMIT 1
+    ");
+    $stmt->execute([$v, $v]);
     $result = $stmt->fetch();
 }
 ?>
@@ -51,8 +67,8 @@ if ($hash) {
             <h2 style="font-size: 2rem; margin-bottom: 40px; text-transform: uppercase;">ASSESSMENT <span style="color: var(--primary)">VERIFIED</span></h2>
             
             <div style="background: #000; padding: 30px; border-radius: 24px; border: 2px solid var(--primary); text-align: left;">
-                <div class="data-row"><span class="data-label">Full Name</span><span class="data-val"><?= strtoupper(htmlspecialchars($result['name'])) ?></span></div>
-                <div class="data-row"><span class="data-label">Student ID</span><span class="data-val"><?= $result['student_id'] ?></span></div>
+                <div class="data-row"><span class="data-label">Full Name</span><span class="data-val"><?= strtoupper(htmlspecialchars($result['student_name'])) ?></span></div>
+                <div class="data-row"><span class="data-label">Student ID</span><span class="data-val"><?= $result['display_id'] ?></span></div>
                 <div class="data-row"><span class="data-label">Score</span><span class="data-val" style="color: var(--primary); font-size: 24px;"><?= $result['total_score'] ?></span></div>
                 <div class="data-row"><span class="data-label">Learning Type</span><span class="data-val"><?= $result['grade'] ?></span></div>
                 <div class="data-row"><span class="data-label">Date Issued</span><span class="data-val"><?= date('d M, Y', strtotime($result['created_at'])) ?></span></div>
@@ -63,6 +79,9 @@ if ($hash) {
             <div class="status-badge invalid">⚠ RECORD NOT FOUND</div>
             <h2 style="font-size: 2rem; margin-bottom: 30px; text-transform: uppercase;">INVALID <span style="color: var(--primary)">CREDENTIALS</span></h2>
             <p style="color: var(--secondary-text); font-size: 1.2rem; line-height: 1.6;">THE PROVIDED HASH OR STUDENT ID DOES NOT MATCH ANY COMPLETED ASSESSMENT IN OUR SECURE DATABASE.</p>
+            <?php if ($v): ?>
+                <p style="font-size: 10px; color: #222;">Debug: Searched for "<?= htmlspecialchars($v) ?>"</p>
+            <?php endif; ?>
         <?php endif; ?>
 
         <button class="btn-primary" onclick="location.href='index.html'" style="margin-top: 50px; width: 100%;">BACK TO PORTAL</button>
