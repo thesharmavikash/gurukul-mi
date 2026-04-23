@@ -7,60 +7,60 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
-        .auth-container { max-width: 450px; margin: 100px auto; padding: 40px; background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 32px; }
-        .auth-container h2 { font-size: 2rem; margin-bottom: 30px; text-align: center; }
-        .auth-footer { margin-top: 30px; text-align: center; color: #64748b; font-size: 0.9rem; }
-        .auth-footer a { color: var(--primary); text-decoration: none; font-weight: bold; }
+        .auth-container { max-width: 500px; margin: 100px auto; padding: 60px; background: var(--card); border: 3px solid var(--border); border-radius: 40px; box-shadow: 0 30px 60px rgba(0,0,0,0.5); }
+        .auth-container h2 { font-size: 3rem; font-weight: 900 !important; margin-bottom: 40px; text-align: center; text-transform: uppercase; letter-spacing: -2px; }
+        .auth-footer { margin-top: 40px; text-align: center; color: var(--secondary-text); font-size: 1rem; font-weight: 800 !important; }
+        .auth-footer a { color: var(--primary); text-decoration: none; border-bottom: 2px solid var(--primary); }
     </style>
 </head>
-<body>
+<body data-theme="dark">
     <div class="auth-container">
-        <h2>Student <span style="color: var(--primary)">Login</span></h2>
+        <h2>STUDENT <span style="color: var(--primary)">LOGIN</span></h2>
         <form id="login-form">
             <div class="input-group">
-                <label>Email or Mobile</label>
-                <input type="text" id="login" placeholder="Enter your registered email/mobile" required>
+                <label>EMAIL OR MOBILE</label>
+                <input type="text" id="login" placeholder="ENTER CREDENTIALS" required>
             </div>
             <div class="input-group">
-                <label>Password</label>
+                <label>PASSWORD</label>
                 <input type="password" id="password" placeholder="••••••••" required>
             </div>
-            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 20px;">SIGN IN</button>
+            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 30px; font-size: 20px;">SIGN IN</button>
         </form>
         <div class="auth-footer">
-            Don't have an account? <a href="#" onclick="showRegister()">Register here</a>
+            NEW HERE? <a href="#" onclick="showRegister()">CREATE ACCOUNT</a>
         </div>
     </div>
 
     <div id="register-container" class="auth-container" style="display: none;">
-        <h2>Join <span style="color: var(--primary)">Gurukul</span></h2>
+        <h2>JOIN <span style="color: var(--primary)">GURUKUL</span></h2>
         <form id="register-form">
             <div class="input-group">
-                <label>Full Name</label>
-                <input type="text" id="name" placeholder="Enter your full name" required>
+                <label>FULL NAME</label>
+                <input type="text" id="name" placeholder="ENTER NAME" required>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
                 <div class="input-group">
-                    <label>Age</label>
-                    <input type="number" id="age" placeholder="Age" required>
+                    <label>AGE</label>
+                    <input type="number" id="age" placeholder="AGE" required>
                 </div>
                 <div class="input-group">
-                    <label>Mobile</label>
-                    <input type="tel" id="mobile" placeholder="10-digit mobile" required>
+                    <label>MOBILE</label>
+                    <input type="tel" id="mobile" placeholder="10 DIGITS" required>
                 </div>
             </div>
             <div class="input-group">
-                <label>Email</label>
-                <input type="email" id="email" placeholder="email@example.com" required>
+                <label>EMAIL ADDRESS</label>
+                <input type="email" id="email" placeholder="EMAIL@EXAMPLE.COM" required>
             </div>
             <div class="input-group">
-                <label>Password</label>
-                <input type="password" id="reg-password" placeholder="Create a password" required>
+                <label>CREATE PASSWORD</label>
+                <input type="password" id="reg-password" placeholder="PASSWORD" required>
             </div>
-            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 20px;">CREATE ACCOUNT</button>
+            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 30px; font-size: 20px;">REGISTER</button>
         </form>
         <div class="auth-footer">
-            Already have an account? <a href="#" onclick="showLogin()">Login here</a>
+            ALREADY REGISTERED? <a href="#" onclick="showLogin()">LOGIN NOW</a>
         </div>
     </div>
 

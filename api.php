@@ -228,6 +228,11 @@ if (strpos($type, 'admin_') === 0) {
         $stmt->execute([$input['section_key'], $input['title'], $input['body']]);
         echo json_encode(['status' => 'success']);
     }
+    elseif ($type === 'admin_create_batch') {
+        $stmt = $pdo->prepare("INSERT INTO batches (name, access_code) VALUES (?, ?)");
+        $stmt->execute([$input['name'], $input['access_code']]);
+        echo json_encode(['status' => 'success']);
+    }
     elseif ($type === 'admin_update_batch') {
         $stmt = $pdo->prepare("UPDATE batches SET access_code = ? WHERE id = ?");
         $stmt->execute([$input['access_code'], $input['id']]);

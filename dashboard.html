@@ -8,43 +8,42 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .dashboard-container { max-width: 1200px; margin: 40px auto; padding: 20px; }
-        .welcome-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
-        .history-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 40px; }
-        .history-list { background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 24px; padding: 20px; }
+        .dashboard-container { max-width: 1200px; margin: 40px auto; padding: 30px; }
+        .welcome-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 60px; padding-bottom: 30px; border-bottom: 4px solid var(--primary); }
+        .history-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 50px; }
+        .history-list { background: var(--card); border: 2px solid var(--border); border-radius: 32px; padding: 30px; }
         .history-item { 
-            padding: 15px; border-bottom: 1px solid #1a1a1a; display: flex; justify-content: space-between; align-items: center;
+            padding: 20px; border-bottom: 2px solid var(--border); display: flex; justify-content: space-between; align-items: center;
             transition: 0.3s; cursor: pointer;
         }
-        .history-item:hover { background: #111; }
+        .history-item:hover { background: #000; border-color: var(--primary); }
         .history-item:last-child { border-bottom: none; }
-        .chart-card { background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 24px; padding: 30px; }
-        .empty-state { text-align: center; padding: 60px; color: #64748b; }
+        .chart-card { background: var(--card); border: 2px solid var(--border); border-radius: 32px; padding: 40px; }
+        .empty-state { text-align: center; padding: 80px; color: var(--secondary-text); font-weight: 900 !important; }
     </style>
 </head>
-<body>
+<body data-theme="dark">
     <div class="dashboard-container">
         <div class="welcome-header">
             <div>
-                <h1 style="font-size: 2.5rem; font-weight: 900;">Hello, <span id="student-name" style="color: var(--primary)">Student</span></h1>
-                <p id="student-id" style="color: #64748b; font-weight: bold;"></p>
+                <h1 style="font-size: 3rem; font-weight: 900 !important; margin: 0; text-transform: uppercase; letter-spacing: -2px;">HELLO, <span id="student-name" style="color: var(--primary)">STUDENT</span></h1>
+                <p id="student-id" style="color: var(--secondary-text); font-weight: 900 !important; font-size: 1.2rem; margin-top: 5px;"></p>
             </div>
-            <div style="display: flex; gap: 15px;">
-                <button class="btn-primary" onclick="location.href='index.html'">NEW ASSESSMENT</button>
+            <div style="display: flex; gap: 20px;">
+                <button class="btn-primary" onclick="location.href='index.html'">NEW TEST</button>
                 <button class="btn-secondary" onclick="logout()">LOGOUT</button>
             </div>
         </div>
 
         <div class="history-grid">
             <div class="history-list">
-                <h3 style="margin-top: 0; padding: 10px;">Assessment History</h3>
+                <h3 style="margin-top: 0; margin-bottom: 25px; color: var(--primary); text-transform: uppercase;">ASSESSMENT HISTORY</h3>
                 <div id="history-items">
-                    <!-- History injected here -->
-                    <div class="loading-state">Loading history...</div>
+                    <div class="loading-state">FETCHING RECORDS...</div>
                 </div>
             </div>
             <div class="chart-card">
-                <h3 style="margin-top: 0; margin-bottom: 20px;">Intelligence Evolution</h3>
+                <h3 style="margin-top: 0; margin-bottom: 30px; text-transform: uppercase;">INTELLIGENCE EVOLUTION</h3>
                 <canvas id="evolutionChart"></canvas>
             </div>
         </div>
@@ -54,7 +53,7 @@
         const student = JSON.parse(localStorage.getItem('student'));
         if (!student) location.href = 'login.html';
         
-        document.getElementById('student-name').innerText = student.name;
+        document.getElementById('student-name').innerText = student.name.toUpperCase();
         document.getElementById('student-id').innerText = student.student_id;
 
         async function loadHistory() {
@@ -66,20 +65,19 @@
             const data = await res.json();
             const container = document.getElementById('history-items');
             
-            if (data.length === 0) {
-                container.innerHTML = '<div class="empty-state">No assessments found yet.</div>';
+            if (!data || data.length === 0) {
+                container.innerHTML = '<div class="empty-state">NO ASSESSMENTS FOUND.</div>';
                 return;
             }
 
             container.innerHTML = data.map(item => `
                 <div class="history-item" onclick="viewResult('${item.verification_hash}')">
                     <div>
-                        <div style="font-weight:bold">${item.test_type} Questions</div>
-                        <div style="font-size:12px; color:#64748b">${new Date(item.created_at).toLocaleDateString()}</div>
+                        <div style="font-weight:900 !important; text-transform:uppercase">${item.test_type}</div>
+                        <div style="font-size:13px; color:var(--secondary-text)">${new Date(item.created_at).toLocaleDateString()}</div>
                     </div>
                     <div style="text-align:right">
-                        <div class="badge" style="background:var(--primary); color:#fff">${item.total_score}</div>
-                        <div style="font-size:10px; color:#64748b">${item.grade}</div>
+                        <div class="badge" style="background:var(--primary); color:#fff; border:none; padding:5px 12px">${item.total_score}</div>
                     </div>
                 </div>
             `).join('');
@@ -97,13 +95,19 @@
                         label: 'Total Score',
                         data: history.map(h => h.total_score),
                         borderColor: '#e11d48',
-                        backgroundColor: 'rgba(225, 29, 72, 0.1)',
+                        backgroundColor: 'rgba(225, 29, 72, 0.2)',
                         fill: true,
-                        tension: 0.4
+                        tension: 0.3,
+                        borderWidth: 4,
+                        pointRadius: 6,
+                        pointBackgroundColor: '#fff'
                     }]
                 },
                 options: {
-                    scales: { y: { beginAtZero: true } },
+                    scales: { 
+                        y: { beginAtZero: true, grid: { color: '#1a1a1a' } },
+                        x: { grid: { display: false } }
+                    },
                     plugins: { legend: { display: false } }
                 }
             });
