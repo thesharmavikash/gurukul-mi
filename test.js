@@ -204,32 +204,36 @@ function calculateScores() {
 function renderRegistration(el) {
     el.innerHTML = `
         <div class="registration-form">
-            <h2>${state.testConfig.name}</h2>
-            <p>${state.testConfig.description}</p>
-            <form id="reg-form" novalidate style="max-width: 600px; margin: 0 auto;">
+            <h2>${state.testConfig.name.toUpperCase()}</h2>
+            <p>${state.testConfig.description.toUpperCase()}</p>
+            
+            <form id="reg-form" novalidate class="perfect-form">
                 <div class="input-group">
-                    <label>FULL NAME</label>
-                    <input type="text" id="name" placeholder="ENTER YOUR FULL NAME" required minlength="3" value="${state.user.name}">
+                    <label>Full Name</label>
+                    <input type="text" id="name" placeholder="Enter your full name" required minlength="3" value="${state.user.name}">
                 </div>
-                <div style="display:grid; grid-template-columns: 1fr 1.5fr; gap:25px">
-                    <div class="input-group">
-                        <label>AGE</label>
-                        <input type="number" id="age" placeholder="AGE" required min="5" max="100" value="${state.user.age}">
-                    </div>
-                    <div class="input-group">
-                        <label>BATCH ACCESS CODE (OPTIONAL)</label>
-                        <input type="text" id="batch_code" placeholder="e.g. CLASS-A" value="${state.user.batch_code || ''}">
-                    </div>
-                </div>
+
                 <div class="input-group">
-                    <label>MOBILE NUMBER</label>
-                    <input type="tel" id="mobile" placeholder="ENTER YOUR MOBILE NUMBER" required pattern="[0-9]{10}" value="${state.user.mobile}">
+                    <label>Age</label>
+                    <input type="number" id="age" placeholder="Enter your age" required min="5" max="100" value="${state.user.age}">
                 </div>
+
                 <div class="input-group">
-                    <label>EMAIL ID</label>
-                    <input type="email" id="email" placeholder="ENTER YOUR EMAIL ID" required value="${state.user.email}">
+                    <label>Batch Access Code (Optional)</label>
+                    <input type="text" id="batch_code" placeholder="e.g. CLASS-A" value="${state.user.batch_code || ''}">
                 </div>
-                <button type="submit" class="btn-primary" style="width:100%; margin-top:20px; font-size:22px">START ASSESSMENT</button>
+
+                <div class="input-group">
+                    <label>Mobile Number</label>
+                    <input type="tel" id="mobile" placeholder="Enter your mobile number" required pattern="[0-9]{10}" value="${state.user.mobile}">
+                </div>
+
+                <div class="input-group">
+                    <label>Email ID</label>
+                    <input type="email" id="email" placeholder="Enter your email ID" required value="${state.user.email}">
+                </div>
+
+                <button type="submit" class="btn-primary" style="width:100%; margin-top:30px; font-size:24px; padding: 25px;">START ASSESSMENT</button>
             </form>
         </div>
     `;
