@@ -10,37 +10,46 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        #test-subtitle { font-size: 13px; color: var(--secondary-text); text-transform: uppercase; font-weight: 800 !important; }
+        .portal-container { max-width: 1100px; margin: 50px auto; padding: 0 20px; text-align: center; }
+        .portal-header { margin-bottom: 60px; }
+        .portal-header img { width: 120px; border-radius: 20px; margin-bottom: 25px; border: 4px solid var(--primary); }
+        .portal-header h1 { font-size: 3.5rem; font-weight: 900 !important; letter-spacing: -3px; margin-bottom: 10px; text-transform: uppercase; }
+        .portal-header p { color: var(--secondary-text); font-size: 1.2rem; font-weight: 800 !important; text-transform: uppercase; }
+        
         #mi-watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 8rem; color: rgba(255,255,255,0.03); pointer-events: none; z-index: 0; white-space: nowrap; font-weight: 900 !important; text-transform: uppercase; }
         .security-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 10000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
         .security-card { background: var(--card); padding: 50px; border-radius: 40px; border: 3px solid var(--primary); text-align: center; max-width: 500px; }
+        
+        /* Floating Actions for internal pages without header */
+        .page-actions { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
     </style>
 </head>
 <body data-theme="dark">
     <div id="mi-watermark">GIAS SECURE</div>
 
-    <header class="site-header">
-        <div class="header-container">
-            <a href="index.html" class="brand">
-                <img src="gurukul_ias.jpeg" alt="Logo" class="logo-icon">
-                <div class="brand-text">
-                    <h1>GURUKUL IAS</h1>
-                    <p id="test-subtitle">Intelligence Assessment</p>
-                </div>
+    <main class="portal-container">
+        <header class="portal-header">
+            <a href="index.html" style="text-decoration: none; color: inherit;">
+                <img src="gurukul_ias.jpeg" alt="GURUKUL IAS">
+                <h1>GURUKUL <span style="color: var(--primary)">IAS</span></h1>
             </a>
-            <div class="header-actions" id="header-actions"></div>
-        </div>
-    </header>
+            <p>Intelligence Assessment Portal</p>
+            
+            <div class="page-actions" id="header-actions">
+                <!-- Actions like Lang/Theme will be injected here by test.js -->
+            </div>
+        </header>
 
-    <div class="security-overlay" id="sec-overlay">
-        <div class="security-card">
-            <h2 style="color: var(--primary); font-size: 2.5rem; margin-bottom: 20px;">SECURITY ALERT</h2>
-            <p style="font-size: 1.2rem; line-height: 1.5; margin-bottom: 30px;">WINDOW FOCUS LOST. THIS VIOLATION HAS BEEN LOGGED. PLEASE RETURN TO FULLSCREEN TO CONTINUE.</p>
-            <button class="btn-primary" onclick="resumeTest()">RESUME ASSESSMENT</button>
+        <div class="security-overlay" id="sec-overlay">
+            <div class="security-card">
+                <h2 style="color: var(--primary); font-size: 2.5rem; margin-bottom: 20px;">SECURITY ALERT</h2>
+                <p style="font-size: 1.2rem; line-height: 1.5; margin-bottom: 30px;">WINDOW FOCUS LOST. THIS VIOLATION HAS BEEN LOGGED. PLEASE RETURN TO FULLSCREEN TO CONTINUE.</p>
+                <button class="btn-primary" onclick="resumeTest()">RESUME ASSESSMENT</button>
+            </div>
         </div>
-    </div>
 
-    <main class="container" id="app-container"></main>
+        <div id="app-container"></div>
+    </main>
 
     <footer class="site-footer">
         <div class="footer-container">
@@ -53,11 +62,13 @@
                     <h4>Quick Links</h4>
                     <p><a href="index.html" style="color: inherit; text-decoration: none;">Assessments</a></p>
                     <p><a href="login.html" style="color: inherit; text-decoration: none;">Student Portal</a></p>
+                    <p><a href="verify.php" style="color: inherit; text-decoration: none;">Verify Result</a></p>
                 </div>
                 <div class="footer-section">
-                    <h4>Support</h4>
-                    <p>help@gurukulias.com</p>
+                    <h4>Contact Us</h4>
+                    <p>123 Excellence Way, Delhi</p>
                     <p>+91 98765 43210</p>
+                    <p>help@gurukulias.com</p>
                 </div>
             </div>
             <div class="footer-bottom">
