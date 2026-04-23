@@ -107,6 +107,26 @@ body {
     text-transform: uppercase;
 }
 
+/* --- FORMS & REGISTRATION --- */
+.registration-form { text-align: center; }
+.registration-form h2 { font-size: 3.5rem; font-weight: 900 !important; color: var(--primary); text-transform: uppercase; margin-bottom: 10px; letter-spacing: -2px; }
+.registration-form p { font-size: 1.2rem; color: var(--secondary-text); margin-bottom: 50px; font-weight: 800 !important; text-transform: uppercase; }
+
+.input-group { text-align: left; margin-bottom: 25px; }
+.input-group label { display: block; font-size: 13px; color: var(--secondary-text); margin-bottom: 10px; font-weight: 900 !important; text-transform: uppercase; }
+input { 
+    width: 100%; padding: 20px 25px; background: var(--input-bg); border: 2px solid var(--border); 
+    border-radius: 16px; font-size: 18px; color: #fff; font-weight: 900 !important; transition: 0.2s; box-sizing: border-box;
+}
+input:focus { border-color: var(--primary); background: #000; outline: none; }
+
+.form-actions { margin-top: 40px; display: flex; flex-direction: column; gap: 15px; }
+
+/* --- TEST VIEW --- */
+.test-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid var(--border); }
+.test-header h3 { margin: 0; font-size: 24px; color: var(--primary); text-transform: uppercase; }
+.student-badge { background: var(--primary); color: #fff; padding: 8px 15px; border-radius: 10px; font-size: 12px; }
+
 /* --- CONTAINERS & CARDS --- */
 .container { 
     width: 95%; max-width: 1000px; background: var(--card); padding: 60px; 

@@ -206,30 +206,30 @@ function renderRegistration(el) {
         <div class="registration-form">
             <h2>${state.testConfig.name}</h2>
             <p>${state.testConfig.description}</p>
-            <form id="reg-form" novalidate>
+            <form id="reg-form" novalidate style="max-width: 600px; margin: 0 auto;">
                 <div class="input-group">
-                    <label for="name">${t().labelName}</label>
-                    <input type="text" id="name" placeholder="${t().placeholderName}" required minlength="3" value="${state.user.name}">
+                    <label>FULL NAME</label>
+                    <input type="text" id="name" placeholder="ENTER YOUR FULL NAME" required minlength="3" value="${state.user.name}">
                 </div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px">
+                <div style="display:grid; grid-template-columns: 1fr 1.5fr; gap:25px">
                     <div class="input-group">
-                        <label for="age">${t().labelAge}</label>
-                        <input type="number" id="age" placeholder="${t().placeholderAge}" required min="5" max="100" value="${state.user.age}">
+                        <label>AGE</label>
+                        <input type="number" id="age" placeholder="AGE" required min="5" max="100" value="${state.user.age}">
                     </div>
                     <div class="input-group">
-                        <label for="batch_code">Batch Access Code (Optional)</label>
+                        <label>BATCH ACCESS CODE (OPTIONAL)</label>
                         <input type="text" id="batch_code" placeholder="e.g. CLASS-A" value="${state.user.batch_code || ''}">
                     </div>
                 </div>
                 <div class="input-group">
-                    <label for="mobile">${t().labelMobile}</label>
-                    <input type="tel" id="mobile" placeholder="${t().placeholderMobile}" required pattern="[0-9]{10}" value="${state.user.mobile}">
+                    <label>MOBILE NUMBER</label>
+                    <input type="tel" id="mobile" placeholder="ENTER YOUR MOBILE NUMBER" required pattern="[0-9]{10}" value="${state.user.mobile}">
                 </div>
                 <div class="input-group">
-                    <label for="email">${t().labelEmail}</label>
-                    <input type="email" id="email" placeholder="${t().placeholderEmail}" required value="${state.user.email}">
+                    <label>EMAIL ID</label>
+                    <input type="email" id="email" placeholder="ENTER YOUR EMAIL ID" required value="${state.user.email}">
                 </div>
-                <button type="submit" class="btn-primary">${t().btnStart}</button>
+                <button type="submit" class="btn-primary" style="width:100%; margin-top:20px; font-size:22px">START ASSESSMENT</button>
             </form>
         </div>
     `;
