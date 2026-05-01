@@ -424,10 +424,12 @@ if (isset($_GET['export'])) {
                             <input type="text" id="tName" placeholder="E.G. SEMESTER EVALUATION" required>
                             <label>DESCRIPTION</label>
                             <textarea id="tDesc" placeholder="ENTER TEST DETAILS..." required></textarea>
-                            <label>QUESTION COUNT (DIVISIBLE BY 8)</label>
+                            <label>QUESTION COUNT (SELECT POOL SIZE)</label>
                             <select id="tCount">
-                                <?php for($i=8; $i<=96; $i+=8): ?><option value="<?= $i ?>"><?= $i ?> QUESTIONS</option><?php endfor; ?>
-                                <option value="100">100 QUESTIONS</option>
+                                <option value="8">8 QUESTIONS (QUICK)</option>
+                                <option value="56" selected>56 QUESTIONS (STANDARD)</option>
+                                <option value="100">100 QUESTIONS (DEEP-DIVE)</option>
+                                <option value="master">USE ENTIRE MASTER POOL</option>
                             </select>
                             <button type="submit" class="btn btn-primary" style="margin-top:30px; width:100%">SAVE TEST CONFIG</button>
                             <button type="button" class="btn" style="margin-top:10px; width:100%; background:#111; color:#fff" onclick="document.getElementById('testModal').style.display='none'">CANCEL</button>

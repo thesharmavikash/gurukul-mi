@@ -111,10 +111,17 @@ if ($type === 'student_login') {
 
 if ($type === 'student_register') {
     // Check if user exists
-    $check = $pdo->prepare("SELECT id FROM students WHERE email = ? OR mobile = ?");
+    $check = $pdo->prepare("SELECT * FROM students WHERE email = ? OR mobile = ?");
     $check->execute([$input['email'], $input['mobile']]);
-    if ($check->fetch()) {
-        echo json_encode(['error' => 'Email or Mobile already registered']);
+    $user = $check->fetch();
+    if ($user) {
+        // If password matches or was legacy (null), log them in
+        if (!$user['password_hash'] || password_verify($input['password'], $user['password_hash'])) {
+            $_SESSION['student_id'] = $user['id'];
+            echo json_encode(['status' => 'success', 'student_id' => $user['student_id'], 'id' => $user['id'], 'msg' => 'Existing account detected, logged in successfully']);
+            exit;
+        }
+        echo json_encode(['error' => 'Email or Mobile already registered with a different password']);
         exit;
     }
 

@@ -50,6 +50,22 @@ function createWatermark() {
 async function loadData() {
     applyTheme();
     try {
+        // Check if user is already logged in
+        const authRes = await fetch('api.php?type=check_session');
+        const authData = await authRes.json();
+        if (authData.status === 'success' && authData.student) {
+            state.user = authData.user;
+            // Only skip to test if we aren't already finished or in the middle
+            if (state.currentStep === 0) {
+                state.currentStep = 1;
+                state.startTime = Date.now();
+                saveState();
+                
+                await Integrity.requestFullscreen();
+                Integrity.init();
+            }
+        }
+
         if (!state.dbQuestions) {
             const res = await fetch(`api.php?type=questions&test_id=${testId}`);
             const data = await res.json();

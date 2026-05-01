@@ -16,10 +16,10 @@ if (strpos($v, 'verify.php?v=') !== false) {
 
 $result = null;
 
-if ($v) {
+if ($v !== '') {
     // Try verification by hash first, then by student display ID (case-insensitive)
-    $stmt = $pdo->prepare("SELECT r.*, s.name as student_name, s.student_id as display_id FROM assessment_results r JOIN students s ON r.student_id = s.id WHERE r.verification_hash = ? OR UPPER(s.student_id) = UPPER(?) ORDER BY r.created_at DESC LIMIT 1");
-    $stmt->execute([$v, $v]);
+    $stmt = $pdo->prepare("SELECT r.*, s.name as student_name, s.student_id as display_id FROM assessment_results r JOIN students s ON r.student_id = s.id WHERE (r.verification_hash = ? OR UPPER(s.student_id) = UPPER(?)) AND ? != '' ORDER BY r.created_at DESC LIMIT 1");
+    $stmt->execute([$v, $v, $v]);
     $result = $stmt->fetch();
 }
 ?>
