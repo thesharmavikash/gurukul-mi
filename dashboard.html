@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - GURUKUL IAS</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="assets/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .portal-container { max-width: 1200px; margin: 40px auto; padding: 0 20px; text-align: center; }
@@ -26,12 +26,13 @@
     <main class="portal-container">
         <header class="portal-header">
             <a href="index.html" style="text-decoration: none; color: inherit;">
-                <img src="gurukul_ias.jpeg" alt="GURUKUL IAS">
+                <img src="assets/images/gurukul_ias.jpeg" alt="GURUKUL IAS">
                 <h1 id="student-name">HELLO</h1>
             </a>
             <div class="user-meta">
                 <p id="student-id" style="color: var(--secondary-text); font-weight: 800 !important; font-size: 1.2rem; margin: 0;"></p>
                 <div style="display: flex; gap: 15px;">
+                    <button class="btn-primary" onclick="openProfileModal()" style="padding: 10px 20px; font-size: 14px; background: #111; color: #fff; border: 2px solid #222;">MY PROFILE</button>
                     <button class="btn-primary" onclick="location.href='index.html'" style="padding: 10px 20px; font-size: 14px;">NEW TEST</button>
                     <button class="btn-secondary" onclick="logout()" style="padding: 10px 20px; font-size: 14px; border-color: #ef4444; color: #ef4444;">LOGOUT</button>
                 </div>
@@ -52,6 +53,30 @@
         </div>
     </main>
 
+    <div id="profileModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(10px)">
+        <div class="modal-content" style="background:#0a0a0a; padding:40px; border-radius:40px; border:3px solid var(--primary); max-width:500px; width:90%">
+            <h2 style="color:var(--primary); margin-top:0">UPDATE PROFILE</h2>
+            <form id="profile-form">
+                <label style="display:block; margin-top:20px; color:#666; font-size:12px">FULL NAME</label>
+                <input type="text" id="p-name" style="width:100%; padding:15px; background:#111; border:2px solid #222; color:#fff; border-radius:12px; margin-top:5px" required>
+                
+                <label style="display:block; margin-top:20px; color:#666; font-size:12px">AGE</label>
+                <input type="number" id="p-age" style="width:100%; padding:15px; background:#111; border:2px solid #222; color:#fff; border-radius:12px; margin-top:5px" required>
+                
+                <label style="display:block; margin-top:20px; color:#666; font-size:12px">MOBILE NUMBER</label>
+                <input type="tel" id="p-mobile" style="width:100%; padding:15px; background:#111; border:2px solid #222; color:#fff; border-radius:12px; margin-top:5px" required>
+                
+                <label style="display:block; margin-top:20px; color:#666; font-size:12px">EMAIL ID</label>
+                <input type="email" id="p-email" style="width:100%; padding:15px; background:#111; border:2px solid #222; color:#fff; border-radius:12px; margin-top:5px" required>
+                
+                <div style="margin-top:30px; display:flex; gap:10px">
+                    <button type="submit" class="btn-primary" style="flex:1; padding:15px; border-radius:12px">SAVE CHANGES</button>
+                    <button type="button" onclick="closeProfileModal()" style="flex:1; padding:15px; border-radius:12px; background:#111; color:#fff; border:2px solid #222">CANCEL</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <footer class="site-footer">
         <div class="footer-container">
             <div class="footer-bottom">© 2026 GURUKUL IAS. ALL RIGHTS RESERVED.</div>
@@ -59,17 +84,29 @@
     </footer>
 
     <script>
-        const student = JSON.parse(localStorage.getItem('student'));
-        if (!student) location.href = 'login.html';
-        
-        document.getElementById('student-name').innerText = student.name.toUpperCase();
-        document.getElementById('student-id').innerText = student.student_id;
+        let student = null;
+
+        async function initDashboard() {
+            try {
+                const res = await fetch('api.php?type=check_session');
+                const data = await res.json();
+                if (data.status === 'success' && data.student) {
+                    student = data.user;
+                    localStorage.setItem('student', JSON.stringify(student));
+                    document.getElementById('student-name').innerText = student.name.toUpperCase();
+                    document.getElementById('student-id').innerText = student.student_id;
+                    loadHistory();
+                } else {
+                    location.href = 'login.html';
+                }
+            } catch (e) { location.href = 'login.html'; }
+        }
 
         async function loadHistory() {
             const res = await fetch('api.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ type: 'student_history', student_db_id: student.id })
+                body: JSON.stringify({ type: 'student_history' })
             });
             const data = await res.json();
             const container = document.getElementById('history-items');
@@ -89,7 +126,7 @@
                 </div>
             `).join('');
 
-            renderEvolutionChart(data.reverse());
+            renderEvolutionChart(data.slice().reverse());
         }
 
         function renderEvolutionChart(history) {
@@ -120,8 +157,51 @@
             });
         }
 
-        function logout() { localStorage.removeItem('student'); location.href = 'login.html'; }
-        loadHistory();
+        function logout() { localStorage.removeItem('student'); location.href = 'admin.php?logout=1'; }
+        
+        function openProfileModal() {
+            document.getElementById('p-name').value = student.name;
+            document.getElementById('p-age').value = student.age;
+            document.getElementById('p-mobile').value = student.mobile;
+            document.getElementById('p-email').value = student.email;
+            document.getElementById('profileModal').style.display = 'flex';
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').style.display = 'none';
+        }
+
+        document.getElementById('profile-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const updatedData = {
+                type: 'student_update_profile',
+                name: document.getElementById('p-name').value.trim(),
+                age: document.getElementById('p-age').value,
+                mobile: document.getElementById('p-mobile').value.trim(),
+                email: document.getElementById('p-email').value.trim()
+            };
+
+            try {
+                const res = await fetch('api.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedData)
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    localStorage.setItem('student', JSON.stringify(result.user));
+                    alert('Profile Updated Successfully');
+                    location.reload();
+                } else {
+                    alert('Update failed: ' + (result.error || 'Unknown error'));
+                }
+            } catch (e) {
+                console.error('Update failed', e);
+                alert('Update failed. Check connection.');
+            }
+        };
+
+        initDashboard();
     </script>
 </body>
 </html>

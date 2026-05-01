@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GURUKUL IAS - Multiple Intelligences Assessment</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="assets/css/style.css">
     <style>
         .portal-container { max-width: 1100px; margin: 50px auto; padding: 0 20px; text-align: center; }
         
@@ -46,13 +46,45 @@
 <body data-theme="dark">
     <main class="portal-container">
         <header class="portal-header">
-            <img src="gurukul_ias.jpeg" alt="GURUKUL IAS">
+            <img src="assets/images/gurukul_ias.jpeg" alt="GURUKUL IAS">
             <h1>MULTIPLE <span style="color: var(--primary)">INTELLIGENCES</span></h1>
             <p>UNLOCK YOUR COGNITIVE BLUEPRINT. CHOOSE YOUR DEPTH.</p>
-            <div style="margin-top: 30px;">
+            <div id="auth-actions" style="margin-top: 30px; display: flex; gap: 15px; justify-content: center;">
                 <button class="btn-primary" onclick="location.href='login.html'" style="padding: 12px 30px; font-size: 15px;">STUDENT LOGIN</button>
             </div>
         </header>
+
+        <script>
+            async function updateAuthUI() {
+                const authActions = document.getElementById('auth-actions');
+                
+                try {
+                    const res = await fetch('api.php?type=check_session');
+                    const status = await res.json();
+
+                    if (status.status === 'success') {
+                        let html = '';
+                        if (status.student) {
+                            html += `<button class="btn-primary" onclick="location.href='dashboard.html'" style="padding: 12px 25px; font-size: 14px;">MY DASHBOARD</button>`;
+                        }
+                        if (status.admin) {
+                            html += `<button class="btn-secondary" onclick="location.href='admin.php'" style="padding: 12px 25px; font-size: 14px; background: transparent; color: #fff; border: 2px solid var(--border);">ADMIN PANEL</button>`;
+                        }
+                        html += `<button class="btn-secondary" onclick="logout()" style="padding: 12px 25px; font-size: 14px; border-color: #ef4444; color: #ef4444;">LOGOUT</button>`;
+                        authActions.innerHTML = html;
+                    } else {
+                        authActions.innerHTML = `<button class="btn-primary" onclick="location.href='login.html'" style="padding: 12px 30px; font-size: 15px;">STUDENT LOGIN</button>`;
+                    }
+                } catch (e) { console.error('Auth check failed', e); }
+            }
+
+            function logout() {
+                localStorage.removeItem('student');
+                location.href = 'admin.php?logout=1';
+            }
+
+            document.addEventListener('DOMContentLoaded', updateAuthUI);
+        </script>
 
         <div class="test-grid" id="test-grid">
             <div class="loading-state"><p>INITIALIZING ASSESSMENTS...</p></div>

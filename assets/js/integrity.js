@@ -6,6 +6,8 @@
 export const Integrity = {
     violations: 0,
     initialized: false,
+    fullscreenSupported: true,
+    fullscreenActive: false,
     
     init() {
         if (this.initialized) return;
@@ -32,8 +34,13 @@ export const Integrity = {
 
     setupFullscreen() {
         const checkFullscreen = () => {
-            if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
+            if (!this.fullscreenSupported) return;
+            const isFS = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+            if (!isFS && this.fullscreenActive) {
+                this.fullscreenActive = false;
                 this.recordViolation("Fullscreen Exited");
+            } else if (isFS) {
+                this.fullscreenActive = true;
             }
         };
 
@@ -44,17 +51,33 @@ export const Integrity = {
         };
 
         document.addEventListener('fullscreenchange', checkFullscreen);
+        document.addEventListener('webkitfullscreenchange', checkFullscreen);
+        document.addEventListener('mozfullscreenchange', checkFullscreen);
+        document.addEventListener('MSFullscreenChange', checkFullscreen);
+
         window.addEventListener('blur', checkBlur);
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) checkBlur();
         });
     },
 
-    recordViolation(reason) {
+    async recordViolation(reason) {
+        // Skip fullscreen violations if not supported
+        if (reason === "Fullscreen Exited" && !this.fullscreenSupported) return;
+        
         this.violations++;
         console.warn(`Integrity Violation (${this.violations}): ${reason}`);
+        
+        // Log to server
+        try {
+            await fetch('api.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'log_violation', reason: reason, total: this.violations })
+            });
+        } catch (e) { console.error('Failed to log violation', e); }
+
         this.showViolationWarning(reason);
-        // Dispatch custom event for the test engine to pick up
         window.dispatchEvent(new CustomEvent('mi_violation', { detail: { reason, total: this.violations } }));
     },
 
@@ -62,7 +85,17 @@ export const Integrity = {
         const el = document.documentElement;
         const rfs = el.requestFullscreen || el.webkitRequestFullScreen || el.mozRequestFullScreen || el.msRequestFullscreen;
         if (rfs) {
-            try { await rfs.call(el); } catch (e) { console.warn("Fullscreen rejected", e); }
+            try { 
+                await rfs.call(el); 
+                this.fullscreenActive = true;
+                this.fullscreenSupported = true;
+            } catch (e) { 
+                console.warn("Fullscreen rejected", e); 
+                this.fullscreenSupported = false;
+                this.fullscreenActive = false;
+            }
+        } else {
+            this.fullscreenSupported = false;
         }
     },
 

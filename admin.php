@@ -1,28 +1,41 @@
 <?php
-session_start();
-/**
- * GURUKUL IAS Senior Admin Dashboard v3.7
- * ENFORCED BOLD UI | UNIFIED HEADER/FOOTER SETTINGS | BATCH ANALYTICS
- */
+require_once 'config.php';
+$pdo = getPDO();
 
-$host = 'localhost'; $db = 'gurukul_mi'; $user = 'root'; $pass = 'root';
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-    ]);
-} catch (Exception $e) { die("System Maintenance: Database Connection Offline"); }
+// Ensure violation_logs table exists to prevent crashes
+$pdo->exec("CREATE TABLE IF NOT EXISTS violation_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    test_id INT NULL,
+    violation_type VARCHAR(100) NOT NULL,
+    violation_details TEXT NULL,
+    ip_address VARCHAR(45) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)");
 
 // AUTHENTICATION
 if (isset($_POST['login'])) {
     $stmt = $pdo->prepare("SELECT * FROM admins WHERE username = ?");
     $stmt->execute([$_POST['username']]);
     $admin = $stmt->fetch();
-    if ($admin && ($_POST['password'] === $admin['password'] || password_verify($_POST['password'], $admin['password']))) {
+    if ($admin && password_verify($_POST['password'], $admin['password'])) {
         $_SESSION['admin_id'] = $admin['id'];
         $_SESSION['admin_user'] = $admin['username'];
+        $_SESSION['admin_role'] = $admin['role'];
         header("Location: admin.php"); exit;
     } else { $error = "Invalid Credentials"; }
+}
+
+if (isset($_POST['change_password'])) {
+    checkAdmin();
+    $stmt = $pdo->prepare("SELECT password FROM admins WHERE id = ?");
+    $stmt->execute([$_SESSION['admin_id']]);
+    $currentHash = $stmt->fetchColumn();
+    if (password_verify($_POST['old_pass'], $currentHash)) {
+        $newHash = password_hash($_POST['new_pass'], PASSWORD_DEFAULT);
+        $pdo->prepare("UPDATE admins SET password = ? WHERE id = ?")->execute([$newHash, $_SESSION['admin_id']]);
+        $msg = "Password Updated Successfully";
+    } else { $error = "Current Password Incorrect"; }
 }
 if (isset($_GET['logout'])) { session_destroy(); header("Location: admin.php"); exit; }
 if (!isset($_SESSION['admin_id'])) {
@@ -39,7 +52,7 @@ if (!isset($_SESSION['admin_id'])) {
     </style>
     </head><body>
     <form class="login-card" method="POST">
-        <img src="gurukul_ias.jpeg" class="logo">
+        <img src="assets/images/gurukul_ias.jpeg" class="logo">
         <h2>GIAS <span style="color:#e11d48">ADMIN</span></h2>
         <?php if(isset($error)) echo "<p style='color:#ef4444;font-size:12px'>$error</p>"; ?>
         <input type="text" name="username" placeholder="USERNAME" required>
@@ -121,11 +134,12 @@ if (isset($_GET['export'])) {
 <body>
     <div class="sidebar">
         <div style="margin-bottom:40px; display:flex; align-items:center; gap:12px">
-            <img src="gurukul_ias.jpeg" style="width:45px; border-radius:12px; border: 2px solid var(--primary)">
+            <img src="assets/images/gurukul_ias.jpeg" style="width:45px; border-radius:12px; border: 2px solid var(--primary)">
             <span style="font-size:18px; color:var(--primary)">CONTROL</span>
         </div>
         <a href="?p=dashboard" class="nav-link <?= $page=='dashboard'?'active':'' ?>">Analytics</a>
         <a href="?p=assessments" class="nav-link <?= $page=='assessments'?'active':'' ?>">Results</a>
+        <a href="?p=students" class="nav-link <?= $page=='students'?'active':'' ?>">Students</a>
         <a href="?p=tests" class="nav-link <?= $page=='tests'?'active':'' ?>">Tests</a>
         <a href="?p=questions" class="nav-link <?= $page=='questions'?'active':'' ?>">Questions</a>
         <a href="?p=batches" class="nav-link <?= $page=='batches'?'active':'' ?>">Batches</a>
@@ -136,11 +150,29 @@ if (isset($_GET['export'])) {
 
     <div class="main">
         <?php if(isset($msg)): ?><div class="msg-banner"><?= $msg ?></div><?php endif; ?>
-        <div class="top-bar">
-            <h2 style="margin:0; font-size:22px"><?= strtoupper($page) ?></h2>
-            <div style="display:flex; gap:12px">
-                <button onclick="location.href='?export=1'" class="btn" style="background:#111; color:#fff">EXPORT DATA</button>
-                <button onclick="window.open('index.html')" class="btn btn-primary">GO TO PORTAL</button>
+        <div class="top-bar" style="display:flex; justify-content:space-between; align-items:center; background:rgba(13,13,13,0.9); backdrop-filter:blur(20px); border-radius:32px; margin-bottom:50px; padding:20px 40px; border:2px solid #222; box-shadow:0 20px 40px rgba(0,0,0,0.4)">
+            <div style="display:flex; align-items:center; gap:20px">
+                <div style="width:14px; height:120%; position:absolute; left:0; top:0; background:var(--primary); border-radius:32px 0 0 32px"></div>
+                <h2 style="margin:0; font-size:20px; letter-spacing:2px; font-weight:900"><?= strtoupper($page) ?></h2>
+            </div>
+            <div style="display:flex; gap:15px; flex-wrap:wrap">
+                <button onclick="location.href='?p=assessments'" class="btn" style="background:#000; color:#fff; border:2px solid #222; border-radius:16px; padding:12px 25px; font-size:11px; letter-spacing:1px; transition:0.3s">ASSESSMENTS</button>
+                <button onclick="document.getElementById('passModal').style.display='flex'" class="btn" style="background:#000; color:#fff; border:2px solid #222; border-radius:16px; padding:12px 25px; font-size:11px; letter-spacing:1px; transition:0.3s">CHANGE PASSWORD</button>
+                <button onclick="location.href='?export=1'" class="btn" style="background:#000; color:#fff; border:2px solid #222; border-radius:16px; padding:12px 25px; font-size:11px; letter-spacing:1px; transition:0.3s">EXPORT DATA</button>
+                <button onclick="window.open('index.html')" class="btn" style="background:var(--primary); color:#fff; border:none; border-radius:16px; padding:12px 30px; font-size:11px; letter-spacing:1px; font-weight:900; box-shadow:0 10px 20px rgba(225,29,72,0.3); transition:0.3s">GO TO PORTAL</button>
+            </div>
+        </div>
+
+
+        <div id="passModal" class="modal">
+            <div class="modal-content" style="max-width:400px">
+                <h2 style="color:var(--primary)">CHANGE ADMIN PASSWORD</h2>
+                <form method="POST">
+                    <label>CURRENT PASSWORD</label><input type="password" name="old_pass" required>
+                    <label>NEW PASSWORD</label><input type="password" name="new_pass" required minlength="6">
+                    <button type="submit" name="change_password" class="btn btn-primary" style="margin-top:30px; width:100%">UPDATE PASSWORD</button>
+                    <button type="button" class="btn" style="margin-top:10px; width:100%; background:#111; color:#fff" onclick="document.getElementById('passModal').style.display='none'">CANCEL</button>
+                </form>
             </div>
         </div>
 
@@ -154,10 +186,26 @@ if (isset($_GET['export'])) {
                     <div class="widget"><h3>Avg Score</h3><p class="val"><?= round($stats['a'], 1) ?></p></div>
                     <div class="widget"><h3>Flagged</h3><p class="val"><?= $pdo->query("SELECT COUNT(*) FROM assessment_results WHERE is_suspicious=1")->fetchColumn() ?></p></div>
                 </div>
-                <div class="table-container" style="padding:40px">
-                    <h3 style="margin-top:0; color:#444">BATCH INTELLIGENCE HEATMAP</h3>
-                    <canvas id="avgChart" style="max-height:400px"></canvas>
+                <div class="stats-grid" style="margin-top:40px">
+                    <div class="table-container" style="grid-column: span 3; margin-bottom:0">
+                        <h3 style="padding:20px 20px 0; color:#444">BATCH INTELLIGENCE HEATMAP</h3>
+                        <canvas id="avgChart" style="max-height:400px; padding:20px"></canvas>
+                    </div>
+                    <div class="widget" style="display:flex; flex-direction:column; gap:15px">
+                        <h3 style="color:var(--secondary-text)">RECENT VIOLATIONS</h3>
+                        <?php 
+                        $recentV = $pdo->query("SELECT v.*, s.name FROM violation_logs v JOIN students s ON v.student_id = s.id ORDER BY v.created_at DESC LIMIT 5")->fetchAll();
+                        if(empty($recentV)) echo '<p style="color:var(--secondary-text); font-size:12px">NO VIOLATIONS DETECTED</p>';
+                        foreach($recentV as $v): ?>
+                            <div style="border-left:3px solid var(--primary); padding-left:15px; margin-bottom:10px">
+                                <div style="font-size:10px; color:var(--secondary-text)"><?= date('H:i', strtotime($v['created_at'])) ?> | <?= strtoupper($v['name']) ?></div>
+                                <div style="font-size:13px; color:var(--text)"><?= $v['violation_type'] ?></div>
+                            </div>
+                        <?php endforeach; ?>
+                        <button class="btn" style="margin-top:auto; font-size:10px; background:var(--input-bg); color:var(--text); border:1px solid var(--border)" onclick="location.href='?p=assessments'">VIEW ALL RESULTS</button>
+                    </div>
                 </div>
+
                 <script>
                     const avgData = <?= json_encode(array_values($pdo->query("SELECT AVG(JSON_EXTRACT(scores_json, '$[0]')), AVG(JSON_EXTRACT(scores_json, '$[1]')), AVG(JSON_EXTRACT(scores_json, '$[2]')), AVG(JSON_EXTRACT(scores_json, '$[3]')), AVG(JSON_EXTRACT(scores_json, '$[4]')), AVG(JSON_EXTRACT(scores_json, '$[5]')), AVG(JSON_EXTRACT(scores_json, '$[6]')), AVG(JSON_EXTRACT(scores_json, '$[7]')) FROM assessment_results")->fetch())) ?>;
                     new Chart(document.getElementById('avgChart'), {
@@ -173,21 +221,54 @@ if (isset($_GET['export'])) {
             <?php elseif($page == 'assessments'): 
                 $data = $pdo->query("SELECT r.*, s.name, s.student_id FROM assessment_results r JOIN students s ON r.student_id = s.id ORDER BY r.created_at DESC LIMIT 100")->fetchAll();
             ?>
-                <div class="table-container">
-                    <table>
-                        <thead><tr><th>Student Info</th><th>Total</th><th>Test Type</th><th>Duration</th><th>IP Address</th><th>Action</th></tr></thead>
+                <div class="table-container" style="background:transparent; border:none; box-shadow:none">
+                    <table style="border-spacing: 0 15px; border-collapse: separate;">
+                        <thead>
+                            <tr style="background:transparent">
+                                <th style="border:none; color:#333; padding-left:30px">STUDENT INSIGHTS</th>
+                                <th style="border:none; color:#333">SCORE</th>
+                                <th style="border:none; color:#333">ASSESSMENT TYPE</th>
+                                <th style="border:none; color:#333">DURATION</th>
+                                <th style="border:none; color:#333">NETWORK / INTEGRITY</th>
+                                <th style="border:none; color:#333; text-align:right; padding-right:30px">ACTIONS</th>
+                            </tr>
+                        </thead>
                         <tbody>
-                            <?php foreach($data as $r): ?>
-                            <tr style="<?= $r['is_suspicious']?'background:rgba(225,29,72,0.05)':'' ?>">
-                                <td><strong><?= strtoupper(htmlspecialchars($r['name'])) ?></strong><br><small style="color:#555"><?= $r['student_id'] ?></small></td>
-                                <td><span class="badge" style="background:var(--primary); color:#fff; border:none"><?= $r['total_score'] ?></span></td>
-                                <td><?= $r['test_type'] ?></td>
-                                <td><?= floor($r['duration']/60) ?>m <?= $r['duration']%60 ?>s</td>
-                                <td style="font-size:11px; color:#444"><?= $r['ip_address'] ?></td>
-                                <td>
-                                    <div style="display:flex; gap:8px">
-                                        <button class="badge" style="background:#1d4ed8; color:#fff; border:none" onclick="window.open('verify.php?v=<?= $r['verification_hash'] ?>')">VERIFY</button>
-                                        <a href="?p=assessments&delete_assessment=<?= $r['id'] ?>" style="color:#ef4444; font-size:10px" onclick="return confirm('Delete result?')">DELETE</a>
+                            <?php foreach($data as $r): 
+                                try {
+                                    $vCount = $pdo->prepare("SELECT COUNT(*) FROM violation_logs WHERE student_id = ? AND (test_id = ? OR test_id IS NULL)");
+                                    $vCount->execute([$r['student_id'], $r['id']]);
+                                    $violations = $vCount->fetchColumn();
+                                } catch (Exception $e) { $violations = 0; }
+                                $isSuspicious = ($r['is_suspicious'] || $violations > 0);
+                            ?>
+                            <tr style="background:var(--card); transition:0.3s; box-shadow:0 10px 20px rgba(0,0,0,0.1)">
+                                <td style="padding:25px 30px; border-radius:24px 0 0 24px; border-top:2px solid var(--border); border-bottom:2px solid var(--border); border-left:2px solid <?= $isSuspicious?'var(--primary)':'var(--border)' ?>">
+                                    <div style="font-size:16px; color:var(--text); font-weight:900"><?= strtoupper(htmlspecialchars($r['name'])) ?></div>
+                                    <div style="font-size:10px; color:var(--secondary-text); letter-spacing:1px; margin-top:5px">REG ID: <?= $r['student_id'] ?></div>
+                                </td>
+                                <td style="border-top:2px solid var(--border); border-bottom:2px solid var(--border)">
+                                    <div style="width:45px; height:45px; background:<?= $isSuspicious?'rgba(225,29,72,0.1)':'var(--input-bg)' ?>; border:2px solid <?= $isSuspicious?'var(--primary)':'var(--border)' ?>; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; color:<?= $isSuspicious?'var(--primary)':'var(--text)' ?>"><?= $r['total_score'] ?></div>
+                                </td>
+                                <td style="border-top:2px solid var(--border); border-bottom:2px solid var(--border)">
+                                    <span class="badge" style="background:var(--bg); border:1px solid var(--border); padding:8px 15px; color:var(--secondary-text)"><?= strtoupper($r['test_type']) ?></span>
+                                </td>
+                                <td style="border-top:2px solid var(--border); border-bottom:2px solid var(--border); color:var(--secondary-text); font-size:13px">
+                                    <?= floor($r['duration']/60) ?>M <?= $r['duration']%60 ?>S
+                                </td>
+                                <td style="border-top:2px solid var(--border); border-bottom:2px solid var(--border)">
+                                    <div style="font-size:11px; color:var(--secondary-text)"><?= $r['ip_address'] ?></div>
+                                    <?php if($violations > 0): ?>
+                                        <div onclick="viewViolations(<?= $r['student_id'] ?>)" style="cursor:pointer; color:var(--primary); font-size:10px; margin-top:5px; display:flex; align-items:center; gap:5px">
+                                            <div style="width:6px; height:6px; background:var(--primary); border-radius:50%; animation: pulse 2s infinite"></div>
+                                            <?= $violations ?> INTEGRITY ALERTS
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
+                                <td style="padding-right:30px; border-radius:0 24px 24px 0; border-top:2px solid var(--border); border-bottom:2px solid var(--border); border-right:2px solid var(--border); text-align:right">
+                                    <div style="display:flex; gap:10px; justify-content:flex-end">
+                                        <button class="btn" style="background:var(--input-bg); color:var(--text); border:2px solid var(--border); font-size:10px; padding:10px 20px" onclick="window.open('verify.php?v=<?= $r['verification_hash'] ?>')">VIEW REPORT</button>
+                                        <a href="?p=assessments&delete_assessment=<?= $r['id'] ?>" style="color:var(--secondary-text); font-size:10px; text-decoration:none; padding:10px" onclick="return confirm('Permanently remove this record?')">DELETE</a>
                                     </div>
                                 </td>
                             </tr>
@@ -195,6 +276,115 @@ if (isset($_GET['export'])) {
                         </tbody>
                     </table>
                 </div>
+                <style>@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }</style>
+
+                <div id="vModal" class="modal">
+                    <div class="modal-content" style="max-width:600px">
+                        <h2 style="color:var(--primary)">INTEGRITY LOGS</h2>
+                        <div id="vLogs" style="max-height:400px; overflow-y:auto; background:#000; padding:20px; border-radius:16px; border:1px solid #333"></div>
+                        <button class="btn" style="margin-top:30px; width:100%; background:#111; color:#fff" onclick="document.getElementById('vModal').style.display='none'">CLOSE</button>
+                    </div>
+                </div>
+
+                <script>
+                    async function viewViolations(studentId) {
+                        const res = await fetch('api.php?type=admin_get_violations&student_id=' + studentId);
+                        const logs = await res.json();
+                        const container = document.getElementById('vLogs');
+                        if (logs.length === 0) {
+                            container.innerHTML = '<p style="color:#444">No violations recorded.</p>';
+                        } else {
+                            container.innerHTML = logs.map(l => `
+                                <div style="padding:15px; border-bottom:1px solid #222">
+                                    <div style="color:var(--primary); font-size:12px; margin-bottom:5px">${l.violation_type.toUpperCase()}</div>
+                                    <div style="color:#fff; font-size:14px">${l.violation_details}</div>
+                                    <div style="color:#444; font-size:10px; margin-top:5px">${l.created_at} | IP: ${l.ip_address}</div>
+                                </div>
+                            `).join('');
+                        }
+                        document.getElementById('vModal').style.display = 'flex';
+                    }
+                </script>
+
+            <?php elseif($page == 'students'): 
+                $data = $pdo->query("SELECT * FROM students ORDER BY created_at DESC")->fetchAll();
+            ?>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>ID</th><th>Student Info</th><th>Enrolled</th><th>Action</th></tr></thead>
+                        <tbody>
+                            <?php foreach($data as $s): ?>
+                            <tr>
+                                <td><span class="badge"><?= $s['student_id'] ?></span></td>
+                                <td><strong><?= strtoupper(htmlspecialchars($s['name'])) ?></strong><br><small style="color:#555"><?= $s['email'] ?> | <?= $s['mobile'] ?></small></td>
+                                <td><?= date('d M, Y', strtotime($s['created_at'])) ?></td>
+                                <td>
+                                    <div style="display:flex; gap:10px">
+                                        <button class="badge" style="color:#fff; background:#111; cursor:pointer" onclick='resetStudentPass(<?= $s['id'] ?>, "<?= addslashes($s['name']) ?>")'>RESET PASS</button>
+                                        <button class="badge" style="color:var(--primary); cursor:pointer" onclick='openStudentModal(<?= json_encode($s) ?>)'>EDIT</button>
+                                        <a href="?p=students&delete_student=<?= $s['id'] ?>" style="color:#ef4444; font-size:10px" onclick="return confirm('Delete student and all results?')">DELETE</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+                <script>
+                    async function resetStudentPass(id, name) {
+                        const newPass = prompt(`Enter new password for ${name}:`);
+                        if (newPass) {
+                            const res = await fetch('api.php', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ type: 'admin_reset_student_password', student_db_id: id, password: newPass })
+                            });
+                            const data = await res.json();
+                            if (data.status === 'success') alert('Password Updated');
+                            else alert(data.error);
+                        }
+                    }
+                </script>
+
+                <div id="studentModal" class="modal">
+                    <div class="modal-content">
+                        <h2 style="color:var(--primary)">EDIT STUDENT</h2>
+                        <form onsubmit="saveStudent(event)">
+                            <input type="hidden" id="sId">
+                            <label>FULL NAME</label><input type="text" id="sName" required>
+                            <label>AGE</label><input type="number" id="sAge" required>
+                            <label>MOBILE</label><input type="text" id="sMobile" required>
+                            <label>EMAIL</label><input type="email" id="sEmail" required>
+                            <button type="submit" class="btn btn-primary" style="margin-top:30px; width:100%">UPDATE STUDENT</button>
+                            <button type="button" class="btn" style="margin-top:10px; width:100%; background:#111; color:#fff" onclick="document.getElementById('studentModal').style.display='none'">CANCEL</button>
+                        </form>
+                    </div>
+                </div>
+
+                <script>
+                    function openStudentModal(s) {
+                        document.getElementById('sId').value = s.id;
+                        document.getElementById('sName').value = s.name;
+                        document.getElementById('sAge').value = s.age;
+                        document.getElementById('sMobile').value = s.mobile;
+                        document.getElementById('sEmail').value = s.email;
+                        document.getElementById('studentModal').style.display = 'flex';
+                    }
+                    async function saveStudent(e) {
+                        e.preventDefault();
+                        const data = {
+                            type: 'student_update_profile',
+                            student_db_id: document.getElementById('sId').value,
+                            name: document.getElementById('sName').value,
+                            age: document.getElementById('sAge').value,
+                            mobile: document.getElementById('sMobile').value,
+                            email: document.getElementById('sEmail').value
+                        };
+                        const res = await fetch('api.php', { method: 'POST', body: JSON.stringify(data) });
+                        location.reload();
+                    }
+                </script>
 
             <?php elseif($page == 'tests'): 
                 $tests = $pdo->query("SELECT * FROM tests ORDER BY id ASC")->fetchAll();

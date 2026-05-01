@@ -1,30 +1,12 @@
 <?php
 /**
  * GURUKUL IAS MI Assessment API
- * Handles user registration and result storage
+ * Unified API for Assessment, Analytics, and Authentication
  */
 
 header('Content-Type: application/json');
-
-// Database Configuration
-$host = 'localhost';
-$db   = 'gurukul_mi';
-$user = 'root';
-$pass = 'root';
-$charset = 'utf8mb4';
-
-$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
-$options = [
-    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    PDO::ATTR_EMULATE_PREPARES   => false,
-];
-
-try {
-     $pdo = new PDO($dsn, $user, $pass, $options);
-} catch (\PDOException $e) {
-     die(json_encode(['error' => 'Connection failed']));
-}
+require_once 'config.php';
+$pdo = getPDO();
 
 // Get JSON input
 $input = json_decode(file_get_contents('php://input'), true);
@@ -32,13 +14,13 @@ $type = $input['type'] ?? ($_GET['type'] ?? '');
 
 // --- PUBLIC ENDPOINTS ---
 
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && $type === 'active_tests') {
+if ($type === 'active_tests') {
     $stmt = $pdo->query("SELECT * FROM tests WHERE is_active = 1 ORDER BY id ASC");
     echo json_encode($stmt->fetchAll());
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && $type === 'homepage_cms') {
+if ($type === 'homepage_cms') {
     $stmt = $pdo->query("SELECT section_key, title, body FROM cms_content");
     $data = [];
     while($row = $stmt->fetch()) { $data[$row['section_key']] = $row; }
@@ -46,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $type === 'homepage_cms') {
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && $type === 'recent_completions') {
+if ($type === 'recent_completions') {
     $stmt = $pdo->query("SELECT s.name, r.test_type, r.created_at FROM assessment_results r JOIN students s ON r.student_id = s.id ORDER BY r.created_at DESC LIMIT 5");
     $data = $stmt->fetchAll();
     foreach ($data as &$row) {
@@ -57,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $type === 'recent_completions') {
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && $type === 'verify_certificate') {
+if ($type === 'verify_certificate') {
     $hash = $_GET['v'] ?? '';
     $stmt = $pdo->prepare("SELECT r.*, s.name, s.student_id FROM assessment_results r JOIN students s ON r.student_id = s.id WHERE r.verification_hash = ? OR s.student_id = ?");
     $stmt->execute([$hash, $hash]);
@@ -65,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $type === 'verify_certificate') {
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && $type === 'questions') {
+if ($type === 'questions') {
     $testId = $_GET['test_id'] ?? '2'; 
     $stmtTest = $pdo->prepare("SELECT * FROM tests WHERE id = ?");
     $stmtTest->execute([$testId]);
@@ -76,7 +58,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $type === 'questions') {
         $perCat = floor($count / 8);
         $remainder = $count % 8;
         $allQs = [];
-        
         for ($i=0; $i<8; $i++) {
             $limit = $perCat + ($i < $remainder ? 1 : 0);
             if ($limit > 0) {
@@ -93,14 +74,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $type === 'questions') {
     exit;
 }
 
-// --- AUTH & SHARED ENDPOINTS ---
+// --- AUTHENTICATION ---
+
+if ($type === 'check_session') {
+    $response = ['status' => 'unauthenticated', 'admin' => false, 'student' => false];
+    if (isset($_SESSION['admin_id'])) {
+        $response['status'] = 'success';
+        $response['admin'] = true;
+        $response['user'] = ['id' => $_SESSION['admin_id'], 'username' => $_SESSION['admin_user']];
+    } elseif (isset($_SESSION['student_id'])) {
+        $stmt = $pdo->prepare("SELECT * FROM students WHERE id = ?");
+        $stmt->execute([$_SESSION['student_id']]);
+        $student = $stmt->fetch();
+        if ($student) {
+            $response['status'] = 'success';
+            $response['student'] = true;
+            $response['user'] = $student;
+        }
+    }
+    echo json_encode($response);
+    exit;
+}
 
 if ($type === 'student_login') {
     $stmt = $pdo->prepare("SELECT * FROM students WHERE email = ? OR mobile = ?");
     $stmt->execute([$input['login'], $input['login']]);
     $user = $stmt->fetch();
     if ($user && password_verify($input['password'], $user['password_hash'])) {
-        session_start();
         $_SESSION['student_id'] = $user['id'];
         echo json_encode(['status' => 'success', 'user' => $user]);
     } else {
@@ -110,19 +110,57 @@ if ($type === 'student_login') {
 }
 
 if ($type === 'student_register') {
+    // Check if user exists
+    $check = $pdo->prepare("SELECT id FROM students WHERE email = ? OR mobile = ?");
+    $check->execute([$input['email'], $input['mobile']]);
+    if ($check->fetch()) {
+        echo json_encode(['error' => 'Email or Mobile already registered']);
+        exit;
+    }
+
     $password = password_hash($input['password'], PASSWORD_DEFAULT);
     $studentID = 'GIAS-' . date('Y') . '-' . strtoupper(substr(uniqid(), -4));
     $stmt = $pdo->prepare("INSERT INTO students (student_id, name, age, mobile, email, password_hash) VALUES (?, ?, ?, ?, ?, ?)");
     try {
         $stmt->execute([$studentID, $input['name'], $input['age'], $input['mobile'], $input['email'], $password]);
-        echo json_encode(['status' => 'success', 'student_id' => $studentID]);
+        $id = $pdo->lastInsertId();
+        $_SESSION['student_id'] = $id; // Auto-login after registration
+        echo json_encode(['status' => 'success', 'student_id' => $studentID, 'id' => $id]);
     } catch (Exception $e) {
-        echo json_encode(['error' => 'Registration failed']);
+        echo json_encode(['error' => 'Registration failed: ' . $e->getMessage()]);
     }
     exit;
 }
 
-if ($type === 'registration') {
+if ($type === 'log_violation') {
+    checkStudent();
+    $sId = $_SESSION['student_id'];
+    $stmt = $pdo->prepare("INSERT INTO violation_logs (student_id, violation_type, violation_details, ip_address) VALUES (?, ?, ?, ?)");
+    $stmt->execute([$sId, $input['reason'], "Total Violations: " . ($input['total'] ?? 1), $_SERVER['REMOTE_ADDR']]);
+    echo json_encode(['status' => 'success']);
+    exit;
+}
+
+if ($type === 'admin_get_violations') {
+    checkAdmin();
+    $sId = $_GET['student_id'] ?? 0;
+    $stmt = $pdo->prepare("SELECT * FROM violation_logs WHERE student_id = ? ORDER BY created_at DESC");
+    $stmt->execute([$sId]);
+    echo json_encode($stmt->fetchAll());
+    exit;
+}
+
+if ($type === 'admin_reset_student_password') {
+    checkAdmin();
+    $newPass = password_hash($input['password'], PASSWORD_DEFAULT);
+    $stmt = $pdo->prepare("UPDATE students SET password_hash = ? WHERE id = ?");
+    $stmt->execute([$newPass, $input['student_db_id']]);
+    echo json_encode(['status' => 'success']);
+    exit;
+}
+
+// Legacy registration handler used during test start (if not logged in)
+if ($type === 'quick_registration') {
     $batchId = null;
     if (!empty($input['batch_code'])) {
         $stmtBatch = $pdo->prepare("SELECT id FROM batches WHERE access_code = ?");
@@ -133,6 +171,7 @@ if ($type === 'registration') {
     $stmt = $pdo->prepare("SELECT id, student_id FROM students WHERE mobile = ?");
     $stmt->execute([$input['mobile']]);
     $student = $stmt->fetch();
+    
     if (!$student) {
         $studentID = 'GIAS-' . date('Y') . '-' . strtoupper(substr(uniqid(), -4));
         $stmt = $pdo->prepare("INSERT INTO students (student_id, name, age, mobile, email, batch_id) VALUES (?, ?, ?, ?, ?, ?)");
@@ -145,18 +184,22 @@ if ($type === 'registration') {
             $pdo->prepare("UPDATE students SET batch_id = ? WHERE id = ? AND (batch_id IS NULL OR batch_id = 0)")->execute([$batchId, $id]);
         }
     }
+    $_SESSION['student_id'] = $id;
     echo json_encode(['status' => 'success', 'id' => $id, 'student_id' => $studentID]);
     exit;
 }
 
+// --- PROTECTED STUDENT ENDPOINTS ---
+
 if ($type === 'result') {
-    $stmt = $pdo->prepare("SELECT id FROM students WHERE mobile = ?");
-    $stmt->execute([$input['user']['mobile']]);
-    $studentId = $stmt->fetchColumn();
+    checkStudent();
+    $studentId = $_SESSION['student_id'];
     $verificationHash = bin2hex(random_bytes(16));
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
     $ua = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
     $isSuspicious = $input['is_suspicious'] ?? 0;
+    
+    // Integrity check
     if (($input['duration'] ?? 100) < (count($input['all_responses'] ?? []) * 1)) { $isSuspicious = 1; }
 
     $stmt = $pdo->prepare("INSERT INTO assessment_results (student_id, total_score, grade, scores_json, test_type, tab_switches, duration, is_suspicious, verification_hash, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -169,14 +212,31 @@ if ($type === 'result') {
             $stmtQR->execute([$studentId, $assessmentId, $resp['qIndex'], $resp['catIndex'], $resp['value'], $input['test_type'] ?? '']);
         }
     }
-    echo json_encode(['status' => 'success', 'v_hash' => $verificationHash]);
+    
+    // Construct verification URL
+    $vUrl = BASE_URL . "/verify.php?v=" . $verificationHash;
+    echo json_encode(['status' => 'success', 'v_hash' => $verificationHash, 'v_url' => $vUrl]);
+    exit;
+}
+
+if ($type === 'student_update_profile') {
+    checkStudent();
+    $sId = $_SESSION['student_id'];
+    $stmt = $pdo->prepare("UPDATE students SET name = ?, age = ?, mobile = ?, email = ? WHERE id = ?");
+    try {
+        $stmt->execute([$input['name'], $input['age'], $input['mobile'], $input['email'], $sId]);
+        $stmt = $pdo->prepare("SELECT * FROM students WHERE id = ?");
+        $stmt->execute([$sId]);
+        echo json_encode(['status' => 'success', 'user' => $stmt->fetch()]);
+    } catch (Exception $e) {
+        echo json_encode(['error' => 'Update failed: ' . $e->getMessage()]);
+    }
     exit;
 }
 
 if ($type === 'student_history') {
-    session_start();
-    $sId = $_SESSION['student_id'] ?? $input['student_db_id'] ?? null;
-    if (!$sId) die(json_encode(['error' => 'Unauthorized']));
+    checkStudent();
+    $sId = $_SESSION['student_id'];
     $stmt = $pdo->prepare("SELECT * FROM assessment_results WHERE student_id = ? ORDER BY created_at DESC");
     $stmt->execute([$sId]);
     echo json_encode($stmt->fetchAll());
@@ -184,17 +244,27 @@ if ($type === 'student_history') {
 }
 
 if ($type === 'save_pdf') {
+    checkStudent();
     $vHash = $input['v_hash'] ?? '';
-    if ($vHash && $input['pdf_base64']) {
+    if ($vHash && preg_match('/^[a-f0-9]{32}$/', $vHash) && $input['pdf_base64']) {
         $dir = 'storage/certificates/';
-        if (!file_exists($dir)) mkdir($dir, 0777, true);
+        if (!file_exists($dir)) mkdir($dir, 0775, true);
         $path = $dir . $vHash . '.pdf';
-        file_put_contents($path, base64_decode(preg_replace('#^data:application/pdf;base64,#i', '', $input['pdf_base64'])));
-        $stmt = $pdo->prepare("UPDATE assessment_results SET pdf_path = ? WHERE verification_hash = ?");
-        $stmt->execute([$path, $vHash]);
-        echo json_encode(['status' => 'success', 'path' => $path]);
+        
+        $data = $input['pdf_base64'];
+        if (strpos($data, 'data:application/pdf;base64,') === 0) { $data = substr($data, 28); }
+        
+        $decoded = base64_decode($data, true);
+        if ($decoded !== false && strpos($decoded, '%PDF-') === 0) {
+            file_put_contents($path, $decoded);
+            $stmt = $pdo->prepare("UPDATE assessment_results SET pdf_path = ? WHERE verification_hash = ? AND student_id = ?");
+            $stmt->execute([$path, $vHash, $_SESSION['student_id']]);
+            echo json_encode(['status' => 'success', 'path' => $path]);
+        } else {
+            echo json_encode(['error' => 'Invalid PDF content']);
+        }
     } else {
-        echo json_encode(['error' => 'Invalid data']);
+        echo json_encode(['error' => 'Invalid request data or hash format']);
     }
     exit;
 }
@@ -202,8 +272,7 @@ if ($type === 'save_pdf') {
 // --- ADMIN ENDPOINTS (Restricted) ---
 
 if (strpos($type, 'admin_') === 0) {
-    session_start();
-    if (!isset($_SESSION['admin_id'])) die(json_encode(['error' => 'Unauthorized']));
+    checkAdmin();
 
     if ($type === 'admin_backup_db') {
         $filename = "backup_" . date("Y-m-d_H-i-s") . ".sql";

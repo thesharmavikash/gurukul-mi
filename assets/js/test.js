@@ -13,6 +13,7 @@ const state = {
     shuffledIndices: JSON.parse(sessionStorage.getItem(`mi_${testId}_shuffled`)) || null,
     tabSwitches: parseInt(sessionStorage.getItem(`mi_${testId}_switches`)) || 0,
     vHash: sessionStorage.getItem(`mi_${testId}_vhash`) || '',
+    vUrl: sessionStorage.getItem(`mi_${testId}_vurl`) || '',
     dbQuestions: JSON.parse(sessionStorage.getItem(`mi_${testId}_questions`)) || null,
     startTime: parseInt(sessionStorage.getItem(`mi_${testId}_start`)) || null,
     testConfig: null,
@@ -87,6 +88,7 @@ function saveState() {
     sessionStorage.setItem(`mi_${testId}_answers`, JSON.stringify(state.answers));
     sessionStorage.setItem(`mi_${testId}_switches`, state.tabSwitches.toString());
     sessionStorage.setItem(`mi_${testId}_vhash`, state.vHash);
+    sessionStorage.setItem(`mi_${testId}_vurl`, state.vUrl);
     if (state.shuffledIndices) sessionStorage.setItem(`mi_${testId}_shuffled`, JSON.stringify(state.shuffledIndices));
     if (state.dbQuestions) sessionStorage.setItem(`mi_${testId}_questions`, JSON.stringify(state.dbQuestions));
     if (state.startTime) sessionStorage.setItem(`mi_${testId}_start`, state.startTime.toString());
@@ -94,7 +96,7 @@ function saveState() {
 
 window.resetAssessment = () => {
     if (confirm(t().confirmRestart)) {
-        const keys = [`mi_${testId}_lang`, `mi_${testId}_user`, `mi_${testId}_step`, `mi_${testId}_q_idx`, `mi_${testId}_answers`, `mi_${testId}_shuffled`, `mi_${testId}_switches`, `mi_${testId}_vhash`, `mi_${testId}_questions`, `mi_${testId}_start` ];
+        const keys = [`mi_${testId}_lang`, `mi_${testId}_user`, `mi_${testId}_step`, `mi_${testId}_q_idx`, `mi_${testId}_answers`, `mi_${testId}_shuffled`, `mi_${testId}_switches`, `mi_${testId}_vhash`, `mi_${testId}_vurl`, `mi_${testId}_questions`, `mi_${testId}_start` ];
         keys.forEach(k => sessionStorage.removeItem(k));
         location.href = 'index.html';
     }
@@ -108,12 +110,13 @@ async function syncToBackend(type, data) {
             body: JSON.stringify({ type, ...data })
         });
         const result = await res.json();
-        if (type === 'registration' && result.student_id) {
+        if ((type === 'registration' || type === 'quick_registration') && result.student_id) {
             state.user.student_id = result.student_id;
             saveState();
         }
         if (type === 'result' && result.v_hash) {
             state.vHash = result.v_hash;
+            state.vUrl = result.v_url;
             saveState();
         }
         return result;
@@ -194,8 +197,10 @@ function calculateScores() {
     const categories = Array(8).fill(0);
     state.answers.forEach((val, i) => {
         if (val !== null) {
-            const catIndex = state.dbQuestions ? state.dbQuestions[i].cat : (i % 8);
-            categories[catIndex] += val;
+            const cat = state.dbQuestions ? state.dbQuestions[i].cat : null;
+            if (cat !== null && cat !== undefined) {
+                categories[cat] += val;
+            }
         }
     });
     return categories;
@@ -251,7 +256,7 @@ function renderRegistration(el) {
 
         if (valid) {
             state.user = { name, age, mobile, email, batch_code, student_id: '' };
-            const result = await syncToBackend('registration', state.user);
+            const result = await syncToBackend('quick_registration', state.user);
             state.user.student_id = result?.student_id || 'GIAS-TEMP-' + Math.floor(1000 + Math.random() * 9000);
             state.currentStep = 1;
             state.startTime = Date.now();
@@ -278,43 +283,45 @@ function renderTest(el) {
     const progress = ((state.currentQuestionIndex + 1) / getTotalQuestions()) * 100;
 
     el.innerHTML = `
-        <div class="test-view focus-mode-container">
-            <div class="progress-bar-container">
-                <div class="progress-fill" style="width: ${progress}%"></div>
-            </div>
-            
-            <div class="test-header">
-                <h3>Question ${state.currentQuestionIndex + 1} of ${getTotalQuestions()}</h3>
-                <div class="student-badge">${state.user.student_id}</div>
+        <div class="test-view focus-mode-container" style="max-width: 900px; margin: 0 auto; padding: 40px 20px;">
+            <div class="test-header-modern" style="margin-bottom: 60px; text-align: center;">
+                <div style="font-size: 11px; color: var(--primary); font-weight: 900; letter-spacing: 4px; margin-bottom: 20px; text-transform:uppercase; opacity:0.8">COGNITIVE ANALYSIS · STAGE ${state.currentQuestionIndex + 1}</div>
+                <div class="progress-container-modern" style="height: 2px; background: rgba(255,255,255,0.05); border-radius: 10px; width:100%; position:relative">
+                    <div class="progress-fill-modern" style="width: ${progress}%; height: 100%; background: var(--primary); box-shadow: 0 0 20px var(--primary); transition: 1s cubic-bezier(0.19, 1, 0.22, 1);"></div>
+                </div>
             </div>
 
-            <div class="question-card" id="card-${currentOrigIdx}">
-                <p class="question-text">${questions[currentOrigIdx]}</p>
-                <div class="options">
+            <div class="question-container-modern" id="card-${currentOrigIdx}" style="margin-bottom: 60px;">
+                <h1 class="question-text-modern" style="font-size: 34px; line-height: 1.2; color: var(--text); font-weight: 900; letter-spacing:-1px; margin-bottom: 60px;">${questions[currentOrigIdx]}</h1>
+                
+                <div class="options-grid-modern">
                     ${[1, 2, 3, 4, 5].map(val => {
                         const labels = t().options;
                         const checked = currentVal == val;
                         return `
-                            <label class="option-label ${checked ? 'selected' : ''}">
+                            <label class="modern-option ${checked ? 'selected' : ''}">
                                 <input type="radio" name="q${currentOrigIdx}" value="${val}" ${checked ? 'checked' : ''} 
-                                    onchange="selectOption(${currentOrigIdx}, ${val}, event)">
-                                <span class="option-circle">${val}</span>
-                                <span class="option-desc">${labels[val-1]}</span>
+                                    onchange="selectOption(${currentOrigIdx}, ${val}, event)" style="display: none;">
+                                <div class="modern-option-content">
+                                    <div class="opt-index">${val}</div>
+                                    <div class="opt-text">${labels[val-1]}</div>
+                                </div>
                             </label>
                         `;
                     }).join('')}
                 </div>
             </div>
 
-            <div class="form-actions">
-                <button onclick="prevQuestion()" class="btn-secondary" ${state.currentQuestionIndex === 0 ? 'disabled' : ''}>PREVIOUS</button>
+            <div class="navigation-modern" style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #111; padding-top: 40px;">
+                <button onclick="prevQuestion()" class="nav-btn-modern" ${state.currentQuestionIndex === 0 ? 'disabled' : ''} style="background:transparent; border:none; color:#444; cursor:pointer; padding:10px">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                </button>
+                <div style="font-size:12px; color:#222; font-weight:900">GURUKUL IAS SECURE ASSESSMENT</div>
                 ${state.currentQuestionIndex === getTotalQuestions() - 1 
-                    ? `<button onclick="finishTest()" class="btn-primary">FINISH TEST</button>`
-                    : `<button onclick="nextQuestion()" class="btn-primary" ${currentVal === null ? 'disabled' : ''}>NEXT QUESTION</button>`
+                    ? `<button onclick="finishTest()" class="submit-btn-modern">SUBMIT TEST</button>`
+                    : `<button onclick="nextQuestion()" class="submit-btn-modern" ${currentVal === null ? 'disabled' : ''}>NEXT STEP</button>`
                 }
             </div>
-            
-            <p style="margin-top:30px; font-size:12px; color:var(--secondary-text)">Progress automatically saved. Stay focused.</p>
         </div>
     `;
 }
@@ -364,30 +371,20 @@ function getTotalGrade(total) {
     return { grade: 'Highly Specialized', interpretation: 'Relies on specific learning ways.' };
 }
 
-function getCategoryGrade(score) {
-    const max = (getTotalQuestions()/8)*5;
-    if (score >= max * 0.8) return { grade: 'A', label: 'Strength', desc: 'This is your Superpower.' };
-    if (score >= max * 0.57) return { grade: 'B', label: 'Strength', desc: 'Very good at this.' };
-    if (score >= max * 0.34) return { grade: 'C', label: 'Developing', desc: 'Takes more effort.' };
-    return { grade: 'D', label: 'Emerging', desc: 'Not natural.' };
-}
-
 async function renderResult(el) {
     const scores = calculateScores();
     const totalScore = scores.reduce((a, b) => a + b, 0);
     const totalResult = getTotalGrade(totalScore);
     const durationSec = Math.floor((Date.now() - state.startTime) / 1000);
 
-    const allResponses = state.answers.map((val, i) => ({
-        qIndex: i,
-        catIndex: state.dbQuestions ? state.dbQuestions[i].cat : (i % 8),
-        value: val
-    }));
+    const allResponses = state.answers.map((val, i) => {
+        const cat = state.dbQuestions ? state.dbQuestions[i].cat : null;
+        return { qIndex: i, catIndex: cat, value: val };
+    });
 
     if (!state.vHash) {
         const isSuspicious = state.tabSwitches > 5 || durationSec < (getTotalQuestions() * 1.5);
         const res = await syncToBackend('result', {
-            user: state.user,
             scores: scores,
             total: totalScore,
             grade: totalResult.grade,
@@ -398,6 +395,7 @@ async function renderResult(el) {
             is_suspicious: isSuspicious
         });
         state.vHash = res.v_hash;
+        state.vUrl = res.v_url;
         saveState();
     }
 
@@ -476,7 +474,7 @@ window.showMIDetail = (idx) => {
 async function generatePDF() {
     const downloadBtn = document.getElementById('download-btn');
     const originalText = downloadBtn.innerText;
-    downloadBtn.innerText = "Generating...";
+    downloadBtn.innerText = "Generating Report...";
     downloadBtn.disabled = true;
 
     try {
@@ -491,72 +489,154 @@ async function generatePDF() {
 
         const certContainer = document.createElement('div');
         certContainer.style.position = 'absolute';
-        certContainer.style.left = '0'; certContainer.style.top = '0'; certContainer.style.width = '1100px';
-        certContainer.style.backgroundColor = '#ffffff'; certContainer.style.zIndex = '-999';
+        certContainer.style.left = '-9999px'; certContainer.style.top = '0'; certContainer.style.width = '1200px';
+        certContainer.style.backgroundColor = '#ffffff';
         document.body.appendChild(certContainer);
 
         certContainer.innerHTML = `
-            <div id="p1" style="background:#fff; color:#000; padding:15px; width:1100px; height:800px">
-                <div style="background:#fff; border:6px double #be123c; padding:30px 50px; height:100%; box-sizing:border-box">
-                    <div style="text-align:center; margin-bottom:15px;">
-                        <img src="gurukul_ias.jpeg" alt="Logo" style="width:70px; height:70px; border-radius:10px;">
-                        <div style="font-size:38px; font-weight:900; color:#e11d48; margin-top:5px;">GURUKUL IAS</div>
+            <div id="p1" style="background:#fff; color:#000; padding:20px; width:1200px; height:850px; font-family:'Inter', sans-serif">
+                <div style="background:#fff; border:15px solid #000; padding:60px 80px; height:100%; box-sizing:border-box; position:relative; border-image: linear-gradient(45deg, #be123c, #000) 1;">
+                    
+                    <!-- Top Section: Logo & QR -->
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:40px">
+                        <div style="display:flex; align-items:center; gap:20px">
+                            <img src="assets/images/gurukul_ias.jpeg" alt="Logo" style="width:100px; height:100px; border-radius:20px; border:3px solid #e11d48">
+                            <div>
+                                <div style="font-size:48px; font-weight:900; color:#e11d48; letter-spacing:-2px; line-height:1">GURUKUL IAS</div>
+                                <div style="font-size:12px; font-weight:800; color:#555; margin-top:5px; text-transform:uppercase; letter-spacing:2px">Center for Cognitive Excellence</div>
+                            </div>
+                        </div>
+                        <div style="text-align:center">
+                            <div id="qrcode" style="padding:10px; background:#fff; border:1px solid #eee; border-radius:15px; margin-bottom:8px"></div>
+                            <div style="font-size:10px; font-weight:900; color:#999; letter-spacing:1px">SECURE VERIFICATION</div>
+                        </div>
                     </div>
-                    <div style="text-align:center; font-size:28px; font-weight:bold; margin-bottom:15px; font-style:italic;">Learning Profile Certificate</div>
-                    <div style="text-align:center; font-size:32px; font-weight:900; border-bottom:1px solid #e2e8f0; margin:5px 0 15px;">${state.user.name}</div>
-                    <div style="display:table; width:100%; background:#fef2f2; padding:15px; border-radius:10px; margin-bottom:15px; text-align:center;">
-                        <div style="display:table-cell; width:50%;"><div style="font-size:22px; font-weight:900;">${totalScore} / ${maxPossible}</div></div>
-                        <div style="display:table-cell; width:50%;"><div style="font-size:18px; font-weight:900;">${totalResult.grade}</div></div>
+
+                    <div style="text-align:center; margin-bottom:50px">
+                        <div style="font-size:22px; font-weight:800; color:#000; letter-spacing:8px; text-transform:uppercase; margin-bottom:20px; opacity:0.3">CERTIFICATE OF ACHIEVEMENT</div>
+                        <div style="font-size:16px; font-weight:600; color:#666; margin-bottom:10px italic">This premium document is awarded to</div>
+                        <div style="font-size:64px; font-weight:900; color:#000; letter-spacing:-2px; line-height:1.1; border-bottom:4px solid #e11d48; display:inline-block; padding:0 40px; margin-bottom:15px">${state.user.name.toUpperCase()}</div>
+                        <div style="font-size:18px; font-weight:700; color:#444; margin-top:10px">FOR OUTSTANDING PERFORMANCE IN THE MULTIPLE INTELLIGENCES ASSESSMENT</div>
                     </div>
-                    <div style="display:table; width:100%;">
-                        <div style="display:table-cell; width:450px;"><canvas id="certChart"></canvas></div>
-                        <div style="display:table-cell; vertical-align:top; padding-left:30px">
-                            <table style="width:100%; border-collapse:collapse; font-size:12px;">
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:60px; margin-bottom:50px">
+                        <div style="background:#f8fafc; padding:30px; border-radius:32px; border:2px solid #f1f5f9; display:flex; flex-direction:column; justify-content:center">
+                            <div style="font-size:12px; font-weight:900; color:#be123c; margin-bottom:10px; letter-spacing:2px">COGNITIVE ARCHETYPE</div>
+                            <div style="font-size:32px; font-weight:900; color:#000; line-height:1.2">${totalResult.grade.toUpperCase()}</div>
+                            <div style="margin-top:20px; padding-top:20px; border-top:1px solid #e2e8f0; font-size:14px; color:#64748b; line-height:1.5">${totalResult.interpretation}</div>
+                        </div>
+                        <div style="background:#000; color:#fff; padding:30px; border-radius:32px; border:2px solid #111; position:relative; overflow:hidden">
+                            <div style="position:absolute; top:-20px; right:-20px; width:100px; height:100px; background:var(--primary); filter:blur(40px); opacity:0.3"></div>
+                            <div style="font-size:12px; font-weight:900; color:#be123c; margin-bottom:10px; letter-spacing:2px">AGGREGATE SCORE</div>
+                            <div style="font-size:54px; font-weight:900; color:#fff">${totalScore}<span style="font-size:24px; color:#444"> / ${maxPossible}</span></div>
+                            <div style="margin-top:10px; font-size:12px; font-weight:900; color:var(--primary); text-transform:uppercase">Global Percentile: ${Math.round((totalScore/maxPossible)*100)}%</div>
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 500px 1fr; gap:60px; align-items:center">
+                        <div style="background:#fff; border-radius:32px; padding:20px; border:1px solid #f1f5f9; box-shadow: 0 10px 30px rgba(0,0,0,0.05)">
+                            <canvas id="certChart" width="460" height="320"></canvas>
+                        </div>
+                        <div>
+                            <div style="font-size:14px; font-weight:900; color:#000; margin-bottom:20px; letter-spacing:2px; border-left:4px solid #e11d48; padding-left:15px">INTELLECTUAL DIMENSIONS</div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px">
                                 ${scoreLabels.map((label, i) => `
-                                    <tr><td style="padding:6px; border:1px solid #e2e8f0;"><strong>${label}</strong></td><td style="padding:6px; border:1px solid #e2e8f0; text-align:center;">${scores[i]}</td></tr>
+                                    <div style="background:#f8fafc; padding:15px; border-radius:16px; border:1px solid #f1f5f9">
+                                        <div style="font-size:9px; color:#64748b; font-weight:900; text-transform:uppercase">${label}</div>
+                                        <div style="font-size:20px; color:#000; font-weight:900">${scores[i]}</div>
+                                    </div>
                                 `).join('')}
-                            </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Certification Seal -->
+                    <div style="position:absolute; bottom:60px; right:80px; text-align:center">
+                        <div style="width:150px; height:150px; background:radial-gradient(circle, #e11d48 0%, #9f1239 100%); color:#fff; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow: 0 10px 20px rgba(159, 18, 57, 0.3); border:4px double rgba(255,255,255,0.2)">
+                            <div style="font-size:10px; font-weight:900; letter-spacing:1px">OFFICIAL</div>
+                            <div style="font-size:24px; font-weight:900">SEAL</div>
+                            <div style="font-size:8px; font-weight:800; opacity:0.6; margin-top:5px">AUTHENTICATED</div>
+                        </div>
+                    </div>
+
+                    <div style="position:absolute; bottom:60px; left:80px">
+                        <div style="font-size:11px; color:#999; font-weight:700">
+                            <div style="margin-bottom:5px">CANDIDATE ID: <span style="color:#000">${state.user.student_id}</span></div>
+                            <div style="margin-bottom:5px">VERIFICATION HASH: <span style="color:#000">${state.vHash.substring(0,20).toUpperCase()}</span></div>
+                            <div>ISSUED ON: <span style="color:#000">${new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'long', year:'numeric'}).toUpperCase()}</span></div>
                         </div>
                     </div>
                 </div>
             </div>
         `;
+
+        // Generate QR Code with better styling
+        new QRCode(document.getElementById("qrcode"), {
+            text: state.vUrl,
+            width: 90,
+            height: 90,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
 
         const ctx = document.getElementById('certChart').getContext('2d');
         new Chart(ctx, {
             type: 'radar',
-            data: { labels: scoreLabels, datasets: [{ data: scores, backgroundColor: 'rgba(225, 29, 72, 0.2)', borderColor: '#e11d48', borderWidth: 2 }] },
-            options: { animation: false, responsive: false, scales: { r: { beginAtZero: true, max: getMaxScorePerCat(), ticks: { display: false } } }, plugins: { legend: { display: false } } }
+            data: { labels: scoreLabels, datasets: [{ data: scores, backgroundColor: 'rgba(225, 29, 72, 0.15)', borderColor: '#e11d48', borderWidth: 5, pointRadius: 0 }] },
+            options: { animation: false, responsive: false, scales: { r: { beginAtZero: true, max: getMaxScorePerCat(), grid: { color: '#eee', lineWidth:1 }, angleLines: { color: '#eee' }, ticks: { display: false } } }, plugins: { legend: { display: false } } }
         });
 
-        await new Promise(r => setTimeout(r, 2200));
-        const canvas1 = await html2canvas(document.getElementById('p1'), { scale: 2 });
+        // Add 3 seconds for Chart.js and QRCode to render perfectly
+        await new Promise(r => setTimeout(r, 3000));
+        
+        const canvas1 = await html2canvas(document.getElementById('p1'), { scale: 2, useCORS: true, logging: false });
         const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas1.width, canvas1.height] });
         pdf.addImage(canvas1.toDataURL('image/png'), 'PNG', 0, 0, canvas1.width, canvas1.height);
 
+        // BREAKDOWN PAGE
         pdf.addPage();
         const breakdownEl = document.createElement('div');
-        breakdownEl.style.width = '1100px'; breakdownEl.style.padding = '50px'; breakdownEl.style.backgroundColor = '#fff';
+        breakdownEl.style.width = '1200px'; breakdownEl.style.padding = '80px'; breakdownEl.style.backgroundColor = '#fff';
         breakdownEl.innerHTML = `
-            <div style="font-family:sans-serif; color:#000">
-                <h1 style="color:#e11d48; border-bottom:2px solid #e11d48; padding-bottom:10px">Advanced Personality Breakdown</h1>
-                <div style="margin-top:30px; display:grid; grid-template-columns:1fr 1fr; gap:30px">
-                    ${Object.values(MIMetadata).map(m => `
-                        <div style="margin-bottom:25px; border-left:4px solid #f1f5f9; padding-left:20px">
-                            <h3 style="margin:0; color:#e11d48">${m.name}</h3>
-                            <p style="font-size:14px; color:#475569; margin:5px 0">${m.desc}</p>
-                            <p style="font-size:12px"><strong>Famous personality:</strong> ${m.personalities}</p>
+            <div style="font-family:'Inter', sans-serif; color:#000">
+                <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:8px solid #e11d48; padding-bottom:30px; margin-bottom:50px">
+                    <div>
+                        <div style="font-size:14px; font-weight:900; color:#e11d48; letter-spacing:3px; text-transform:uppercase">Detailed Analytics</div>
+                        <h1 style="color:#000; font-size:48px; margin:0; font-weight:900; letter-spacing:-2px">INTELLIGENCE BLUEPRINT</h1>
+                    </div>
+                    <div style="text-align:right; font-size:16px; font-weight:900; color:#555; text-transform:uppercase">${state.user.name}</div>
+                </div>
+                
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:30px">
+                    ${Object.values(MIMetadata).map((m, i) => `
+                        <div style="background:#f8fafc; border:1px solid #f1f5f9; padding:30px; border-radius:32px; position:relative">
+                            <div style="position:absolute; top:30px; right:30px; font-size:32px; font-weight:900; color:rgba(225,29,72,0.1)">0${i+1}</div>
+                            <h3 style="margin:0 0 15px 0; color:#e11d48; font-size:20px; font-weight:900; text-transform:uppercase">${m.name}</h3>
+                            <p style="font-size:14px; color:#475569; line-height:1.6; margin-bottom:20px; font-weight:600">${m.desc}</p>
+                            <div style="background:#fff; border:1px solid #e2e8f0; padding:15px; border-radius:16px; font-size:12px; color:#000">
+                                <span style="color:#e11d48; font-weight:900">PROMINENT FIGURE:</span> ${m.personalities}
+                            </div>
                         </div>
                     `).join('')}
+                </div>
+
+                <div style="margin-top:60px; padding:40px; background:#000; border-radius:40px; text-align:center; border:2px solid #e11d48; position:relative; overflow:hidden">
+                    <div style="position:absolute; bottom:-30px; left:-30px; width:200px; height:200px; background:#e11d48; filter:blur(100px); opacity:0.2"></div>
+                    <div style="font-size:14px; color:#be123c; font-weight:900; margin-bottom:15px; letter-spacing:4px">OPTIMIZED CAREER TRAJECTORIES</div>
+                    <div style="font-size:32px; font-weight:900; color:#fff; letter-spacing:-1px">${getCareerSuggestions(scores.map((s,i)=>({i,s})).sort((a,b)=>b.s-a.s).slice(0,3).map(x=>x.i))}</div>
                 </div>
             </div>
         `;
         document.body.appendChild(breakdownEl);
-        const canvas2 = await html2canvas(breakdownEl, { scale: 2 });
+        const canvas2 = await html2canvas(breakdownEl, { scale: 2, logging: false });
         pdf.addImage(canvas2.toDataURL('image/png'), 'PNG', 0, 0, canvas1.width, canvas1.height);
         document.body.removeChild(breakdownEl);
 
-        pdf.save(`${state.user.student_id}_Report.pdf`);
+        const pdfBase64 = pdf.output('datauristring');
+        await syncToBackend('save_pdf', { v_hash: state.vHash, pdf_base64: pdfBase64 });
+
+        pdf.save(`${state.user.student_id}_MI_Report.pdf`);
         document.body.removeChild(certContainer);
         document.body.classList.remove('printing');
     } catch (err) {
